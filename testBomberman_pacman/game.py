@@ -349,6 +349,19 @@ class Actions:
     return (x + dx, y + dy)
   getSuccessor = staticmethod(getSuccessor)
 
+  def getNagtiveDirection(dir):
+    if dir == Directions.NORTH:
+      return Directions.SOUTH
+    elif dir == Directions.SOUTH:
+      return Directions.NORTH
+    elif dir == Directions.EAST:
+      return Directions.WEST
+    elif dir == Directions.WEST:
+      return Directions.EAST
+    else:
+      return Directions.STOP
+  getNagtiveDirection = staticmethod(getNagtiveDirection)
+
 class GameStateData:
   """
 
