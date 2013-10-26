@@ -39,7 +39,7 @@ class GreedyAgent(Agent):
     if Directions.STOP in legal: legal.remove(Directions.STOP)
       
     successors = [(state.generateSuccessor(0, action), action) for action in legal] 
-    scored = [(self.evaluationFunction(state), action) for state, action in successors]
+    scored = [(self.evaluationFunction(nstate), action) for nstate, action in successors]
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
 
@@ -47,10 +47,10 @@ class GreedyAgent(Agent):
     nagaction = Actions.getNagtiveDirection(preaction)
     if preaction in bestActions:
         return preaction
-    """elif len([x for x in bestActions if x != nagaction]) == 0:
+    elif len([x for x in bestActions if x != nagaction]) == 0:
         return nagaction
     else:	
-        return random.choice([x for x in bestActions if x != nagaction])"""
+        return random.choice([x for x in bestActions if x != nagaction])
     return random.choice(bestActions)
 	
 def scoreEvaluation(state):
