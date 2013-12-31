@@ -92,6 +92,10 @@ class Configuration:
     Generates a new configuration reached by translating the current
     configuration by the action vector.  This is a low-level call and does
     not attempt to respect the legality of the movement.
+<<<<<<< HEAD
+=======
+
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     Actions are movement vectors.
     """
     x, y= self.pos
@@ -150,10 +154,13 @@ class AgentState:
 	
   def isActive(self):
     return self.FramesUntilNextAction == 0
+<<<<<<< HEAD
     
 class BombState:
   print 'Bombstate'
   #def __init__(self, )  
+=======
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
   
 class Grid:
   """
@@ -327,7 +334,11 @@ class Actions:
     return (dx * speed, dy * speed)
   directionToVector = staticmethod(directionToVector)
 
+<<<<<<< HEAD
   def getPossibleActions(config, walls, block, bomb):
+=======
+  def getPossibleActions(config, walls):
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     possible = []
     x, y = config.pos
     x_int, y_int = int(x + 0.5), int(y + 0.5)
@@ -340,8 +351,12 @@ class Actions:
       dx, dy = vec
       next_y = y_int + dy
       next_x = x_int + dx
+<<<<<<< HEAD
       #if not walls[next_x][next_y] : possible.append(dir)
       if not walls[next_x][next_y] and not block[next_x][next_y] and (next_x, next_y) not in bomb: possible.append(dir)
+=======
+      if not walls[next_x][next_y]: possible.append(dir)
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
 
     return possible
 
@@ -624,6 +639,10 @@ class Game:
           agent.registerInitialState(self.state.deepCopy())
         ## TODO: could this exceed the total time
         self.unmute()
+<<<<<<< HEAD
+=======
+
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     agentIndex = self.startingIndex
     numAgents = len( self.agents )
 
@@ -714,13 +733,22 @@ class Game:
       else:
         self.state = self.state.generateSuccessor( agentIndex, action )
       # If the action is Lay a bomb
+<<<<<<< HEAD
       if action is 'Lay': 
         self.bomb.append((self.state.getFramesUntilEnd() - 10, self.state.getAgentPosition(agentIndex), self.state.data.agentStates[agentIndex].Bomb_Power))
+=======
+      if action is 'Lay':
+        self.bomb.append((self.state.getFramesUntilEnd() - 10,self.state.getAgentPosition(agentIndex)))
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
       # Check FramesUntilEnd
       if agentIndex == numAgents-1:
         self.state.minusOneFrame()
 
+<<<<<<< HEAD
       for counter, position, power in self.bomb:
+=======
+      for counter,position in self.bomb:
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
         if counter == self.state.data.FramesUntilEnd:
           self.state.data._bombExplode.append(position)
           self.state.data.bomb.remove(position)

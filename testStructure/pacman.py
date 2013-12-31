@@ -274,7 +274,11 @@ class ClassicGameRules:
     game = Game(agents, display, self, catchExceptions=catchExceptions)
     game.state = initState
     for position in layout.bomb:
+<<<<<<< HEAD
       game.bomb.append((initState.getFramesUntilEnd() - 10, position, 1))
+=======
+      game.bomb.append((initState.getFramesUntilEnd() - 10, position))
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     self.initialState = initState.deepCopy()
     self.quiet = quiet
     return game
@@ -285,7 +289,11 @@ class ClassicGameRules:
     """
     if state.isWin(): self.win(state, game)
     if state.isLose(): self.lose(state, game)
+<<<<<<< HEAD
     if state.getFramesUntilEnd() == 0: game.gameOver = True
+=======
+    if state.getFramesUntilEnd == 0: game.gameOver = True
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
 
   def win( self, state, game ):
     if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
@@ -330,7 +338,11 @@ class PacmanRules:
     """
     Returns a list of possible actions.
     """
+<<<<<<< HEAD
     legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls, state.data.block, state.data.bomb)
+=======
+    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     x, y = state.getPacmanPosition()
     nearpoint = int(x), int(y)
     if 'Lay' in legal and nearpoint in state.getBombs():
@@ -359,9 +371,15 @@ class PacmanRules:
       # Remove food
       PacmanRules.consume( nearest, state )
     # Lay
+<<<<<<< HEAD
     if action is 'Lay': 
       state.data._bombLaid.append(nearest)
       state.data.bomb.append(nearest)   
+=======
+    if action is 'Lay':
+      state.data._bombLaid.append(nearest)
+      state.data.bomb.append(nearest)
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
   applyAction = staticmethod( applyAction )
 
   def consume( position, state ):
@@ -686,6 +704,10 @@ if __name__ == '__main__':
   """
   args = readCommand( sys.argv[1:] ) # Get game components based on input
   runGames( **args )
+<<<<<<< HEAD
+=======
+
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
   # import cProfile
   # cProfile.run("runGames( **args )")
   pass

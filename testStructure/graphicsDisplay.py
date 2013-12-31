@@ -290,11 +290,19 @@ class PacmanGraphics:
       outlineColor = TEAM_COLORS[index % 2]
       fillColor = GHOST_COLORS[index]
       width = PACMAN_CAPTURE_OUTLINE_WIDTH
+<<<<<<< HEAD
     return [player_image_from(screen_point,"./bomberman/Stop1.gif")]
     """return [circle(screen_point, PACMAN_SCALE * self.gridSize,
                    fillColor = fillColor, outlineColor = outlineColor,
                    endpoints = endpoints,
                    width = width)]"""
+=======
+
+    return [circle(screen_point, PACMAN_SCALE * self.gridSize,
+                   fillColor = fillColor, outlineColor = outlineColor,
+                   endpoints = endpoints,
+                   width = width)]
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
 
   def getEndpoints(self, direction, position=(0,0)):
     x, y = position
@@ -312,6 +320,7 @@ class PacmanGraphics:
       endpoints = (0+delta, 0-delta)
     return endpoints
 
+<<<<<<< HEAD
   def movePacman(self, position, direction, image, index):
     screenPosition = self.to_screen(position)
     endpoints = self.getEndpoints( direction, position )
@@ -321,6 +330,13 @@ class PacmanGraphics:
     img =  "./bomberman/%s%d.gif" % (direction,index)
     image[0] = player_image_from(screenPosition,img)
     move_to(image[0],screenPosition[0],screenPosition[1])
+=======
+  def movePacman(self, position, direction, image):
+    screenPosition = self.to_screen(position)
+    endpoints = self.getEndpoints( direction, position )
+    r = PACMAN_SCALE * self.gridSize
+    moveCircle(image[0], screenPosition, r, endpoints)
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
     refresh()
 
   def animatePacman(self, pacman, prevPacman, image):
@@ -333,10 +349,17 @@ class PacmanGraphics:
       start = time.time()
       fx, fy = self.getPosition(prevPacman)
       px, py = self.getPosition(pacman)
+<<<<<<< HEAD
       frames = 6.0
       for i in range(1,int(frames) + 1):
         pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
         self.movePacman(pos, self.getDirection(pacman), image, i)
+=======
+      frames = 4.0
+      for i in range(1,int(frames) + 1):
+        pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
+        self.movePacman(pos, self.getDirection(pacman), image)
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
         refresh()
         sleep(abs(self.frameTime) / frames)
     else:

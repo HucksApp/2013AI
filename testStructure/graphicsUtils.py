@@ -192,6 +192,7 @@ def image(pos, file="../../blueghost.gif"):
     x, y = pos
     # img = PhotoImage(file=file)
     return _canvas.create_image(x, y, image = Tkinter.PhotoImage(file=file), anchor = Tkinter.NW)
+<<<<<<< HEAD
     
 def player_image_from(pos, file="../../blueghost.gif"):
     global _bomberman
@@ -200,6 +201,8 @@ def player_image_from(pos, file="../../blueghost.gif"):
         remove_from_screen(_bomberman)	
     _bomberman = Tkinter.PhotoImage(file=file)
     return _canvas.create_image(x, y, image = _bomberman,anchor=Tkinter.NW)
+=======
+>>>>>>> dbae74c7747110d17a609e8fe5c42d6b18abf586
 
 def box_image_from(pos, file="../../blueghost.gif"):
     global _box

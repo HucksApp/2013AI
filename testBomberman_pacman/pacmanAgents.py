@@ -7,7 +7,9 @@
 # For more info, see http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
 
 from pacman import Directions
-from game import Agent
+from game import Agent, Actions
+from util import manhattanDistance
+from util import nearestPoint
 import random
 import game
 import util
@@ -40,7 +42,28 @@ class GreedyAgent(Agent):
     scored = [(self.evaluationFunction(nstate), action) for nstate, action in successors]
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+
+    preaction = state.data.agentStates[0].configuration.getDirection()
+    nagaction = Actions.getNagtiveDirection(preaction)
+    if preaction in bestActions:
+        return preaction
+    elif len([x for x in bestActions if x != nagaction]) == 0:
+        return nagaction
+    else:	
+        return random.choice([x for x in bestActions if x != nagaction])
     return random.choice(bestActions)
-  
+	
 def scoreEvaluation(state):
-  return state.getScore()  
+    score  = state.getScore()
+    position = state.getPacmanPosition()
+    nearest = nearestPoint(position)
+	
+    for index in range(1,len(state.data.agentStates)):
+        if not state.data.agentStates[index].scaredTimer > 0:
+            gstate = state.data.agentStates[index].configuration.getPosition()
+            dis = manhattanDistance(gstate,nearest)
+            if dis <= 3:
+                score -= (20-5*dis)
+            elif dis <= 5:
+                score -= (11-2*dis)
+    return score
