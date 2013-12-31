@@ -195,6 +195,7 @@ class PacmanGraphics:
   def drawStaticObjects(self, state):
     layout = self.layout
     self.drawWalls(layout.walls)
+    self.drawBlocks(layout.blocks)
     self.food = self.drawFood(layout.food)
     self.capsules = self.drawCapsules(layout.capsules)
     refresh()
@@ -423,7 +424,17 @@ class PacmanGraphics:
     x = (x + 1)*self.gridSize
     y = (self.height  - y)*self.gridSize
     return ( x, y )
-
+    
+  def drawBlocks(self, blockMatrix):
+      blocklist = blockMatrix.asList()
+      for block in blocklist:
+          screen_point = self.to_screen(block)
+          #dot = image_from(screen_point,"./bomberman/South3.gif")
+          dot = square(screen_point,
+                0.5 * self.gridSize,
+                color = SCORE_COLOR,
+                filled = 1, behind=2)
+      
   def drawWalls(self, wallMatrix):
     wallColor = WALL_COLOR
     for xNum, x in enumerate(wallMatrix):

@@ -242,6 +242,7 @@ class GameState:
 # You shouldn't need to look through the code in this section of the file. #
 ############################################################################
 
+BOMB_TIME = 8 # Countdown of bomb's explosion
 SCARED_TIME = 40    # Moves ghosts are scared
 COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
@@ -352,6 +353,13 @@ class PacmanRules:
       if numFood == 0 and not state.data._lose:
         state.data.scoreChange += 500
         state.data._win = True
+    #ghost info
+    for index in range( 1, len( state.data.agentStates ) ):
+        ghostState = state.data.agentStates[index]
+        ghostPosition = ghostState.configuration.getPosition()
+        "print ghostPosition"
+        if x == ghostPosition[0] or y == ghostPosition[1]:
+            state.data.scoreChange -= 50
     # Eat capsule
     if( position in state.getCapsules() ):
       state.data.capsules.remove( position )

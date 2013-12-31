@@ -22,6 +22,7 @@ class Layout:
     self.width = len(layoutText[0])
     self.height= len(layoutText)
     self.walls = Grid(self.width, self.height, False)
+    self.blocks = Grid(self.width, self.height, False)
     self.food = Grid(self.width, self.height, False)
     self.capsules = []
     self.agentPositions = []
@@ -109,6 +110,8 @@ class Layout:
   def processLayoutChar(self, x, y, layoutChar):
     if layoutChar == '%':      
       self.walls[x][y] = True
+    elif layoutChar == 'b':
+      self.blocks[x][y] = True
     elif layoutChar == '.':
       self.food[x][y] = True 
     elif layoutChar == 'o':    

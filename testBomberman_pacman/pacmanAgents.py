@@ -23,7 +23,7 @@ class LeftTurnAgent(game.Agent):
     if left in legal: return left
     if current in legal: return current
     if Directions.RIGHT[current] in legal: return Directions.RIGHT[current]
-    if Directions.LEFT[left] in legal: return Directions.LEFT[left]
+    #if Directions.LEFT[left] in legal: return Directions.LEFT[left]
     return Directions.STOP
 
 class GreedyAgent(Agent):
@@ -34,10 +34,10 @@ class GreedyAgent(Agent):
   def getAction(self, state):
     # Generate candidate actions
     legal = state.getLegalPacmanActions()
-    if Directions.STOP in legal: legal.remove(Directions.STOP)
+    # if Directions.STOP in legal: legal.remove(Directions.STOP)
       
     successors = [(state.generateSuccessor(0, action), action) for action in legal] 
-    scored = [(self.evaluationFunction(state), action) for state, action in successors]
+    scored = [(self.evaluationFunction(nstate), action) for nstate, action in successors]
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
