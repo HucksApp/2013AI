@@ -10,7 +10,8 @@ from util import *
 import time, os
 import traceback
 import random
-  
+import math
+
 #######################
 # Parts worth reading #
 #######################
@@ -63,7 +64,7 @@ class Configuration:
   """
 
   def __init__(self, pos, direction):
-    self.pos = pos
+    self.pos = (float('%0.2f'%pos[0]),float('%0.2f'%pos[1]))
     self.direction = direction
 
   def getPosition(self):
@@ -97,10 +98,19 @@ class Configuration:
     Actions are movement vectors.
     """
     x, y= self.pos
+    cx,cy = math.ceil(x),math.ceil(y)
+    fx,fy = math.floor(x),math.floor(y)
     dx, dy = vector
     direction = Actions.vectorToDirection(vector)
+
     if direction == Directions.STOP:
       direction = self.direction # There is no stop direction
+    if ( x+dx > cx and cx > fx and dx > 0) or ( y+dy > cy and cy > fy and dy > 0) :
+      return Configuration((cx,cy),direction)
+	  
+    if ( x+dx < fx and cx > fx and dx < 0 ) or ( y+dy < fy and cy > fy and dy < 0) :
+      return Configuration((fx,fy),direction)
+
     return Configuration((x + dx, y+dy), direction)
 
 class AgentState:
@@ -108,13 +118,17 @@ class AgentState:
   AgentStates hold the state of an agent (configuration, speed, scared, etc).
   """
 
-  def __init__( self, startConfiguration, isPacman, speed = 1.0, N_Bomb = 3 ):
+  POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
+  SPEED_TABLE = [0.2, 0.4,0.6, 0.8, 1.0]
+  BOMB_NUMBER_LIMITATION = 10
+  
+  def __init__( self, startConfiguration, isPacman, speed = 0, N_Bomb = 3 ):
     self.start = startConfiguration
     self.configuration = startConfiguration
-    self.isPacman = isPacman
+    self.isPacman = True
     self.speed = speed
     self.FramesUntilNextAction = 0
-    self.Bomb_Power = 1
+    self.Bomb_Power = 0
     self.Bomb_Total_Number = N_Bomb
     self.Bomb_Left_Number = self.Bomb_Total_Number
 
@@ -130,7 +144,7 @@ class AgentState:
     return hash(hash(self.configuration) + 13 * hash(self.Bomb_Power))
 
   def copy( self ):
-    state = AgentState( self.start, self.speed, self.Bomb_Total_Number )
+    state = AgentState( self.start, self.isPacman, self.speed, self.Bomb_Total_Number )
     state.configuration = self.configuration
     state.FramesUntilNextFrame = self.FramesUntilNextAction
     state.Bomb_Power = self.Bomb_Power
@@ -148,7 +162,35 @@ class AgentState:
     return self.FramesUntilNextAction
 	
   def isPacman(self):
-    return self.isPacman
+    return True
+	
+  def getBombPower(self):
+    return self.POWER_TABLE[self.Bomb_Power]
+
+  def getSpeed(self):
+    return self.SPEED_TABLE[self.speed]
+	
+  def minusABomb(self):
+    self.Bomb_Left_Number = self.Bomb_Left_Number - 1
+
+  def recoverABomb(self):
+    self.Bomb_Left_Number = self.Bomb_Left_Number + 1
+
+  def hasBomb(self):
+    return self.Bomb_Left_Number > 0
+	
+  def applyItemEffect(self, type):
+    print 'applyItem ',type,' to agent:'
+    if type is 1 and ( self.Bomb_Power+1 < len(self.POWER_TABLE) ): # Power up
+        self.Bomb_Power = self.Bomb_Power + 1 
+        print 'Power up:',self.POWER_TABLE[self.Bomb_Power]
+    elif type is 2 and ( self.speed+1 < len(self.SPEED_TABLE) ): # Speed up
+        self.speed = self.speed +1 
+        print 'Speed up:',self.SPEED_TABLE[self.speed]
+    elif type is 3 and ( self.Bomb_Total_Number < self.BOMB_NUMBER_LIMITATION): # Number up
+        self.Bomb_Total_Number = self.Bomb_Total_Number + 1 
+        self.Bomb_Left_Number = self.Bomb_Left_Number + 1
+        print 'Number up:',self.Bomb_Left_Number
 	
   def isActive(self):
     return self.FramesUntilNextAction == 0
@@ -375,7 +417,7 @@ class Map:
   BOMB = 31
   EMPTY = 0
   WALL = 11
-  ITME = range(1,10)
+  ITEM = range(1,10)
   BLOCK = range(21,30)
 	
   def __init__(self, layout):
@@ -389,9 +431,11 @@ class Map:
         for x in range(self.width):
             for y in range(self.height):
                 if layout.walls[x][y]: self.map[x][y] = self.WALL
-                elif layout.block[x][y]: self.map[x][y] = random.choice(range(21,22))
+                elif layout.block[x][y]: self.map[x][y] = random.choice(range(21,25))
                 elif (x,y) in layout.capsules: self.map[x][y] = 1
-                elif (x,y) in layout.items: self.map[x][y] = 2
+                elif (x,y,1) in layout.items: self.map[x][y] = 1
+                elif (x,y,2) in layout.items: self.map[x][y] = 2
+                elif (x,y,3) in layout.items: self.map[x][y] = 3
                 elif (x,y) in layout.bomb: self.map[x][y] = self.BOMB
 
   def isWall(self,pos):
@@ -417,10 +461,15 @@ class Map:
   def remove_object(self, pos):
     x,y = pos
     if self.map[x][y] in self.BLOCK:
-       self.map[x][y] = self.map[x][y] - 21
+        print 'Broke a block:',self.map[x][y],' at (',x,',',y,')'
+        self.map[x][y] = self.map[x][y] - 21
+        if self.map[x][y] in self.ITEM:
+            print 'get Item Drop:',self.map[x][y]
+            return self.map[x][y]
     else:
-       self.map[x][y] = self.EMPTY
-	
+        self.map[x][y] = self.EMPTY
+    return None
+	   
   def add_bomb(self, pos):
     x,y = pos
     self.map[x][y] = self.BOMB
@@ -471,6 +520,7 @@ class GameStateData:
     self._bombLaid = []
     self._bombExplode = []
     self._itemEaten = []
+    self._itemDrop = []
     self._blockBroken = []
     self._agentMoved = None
     self._lose = False
@@ -799,15 +849,17 @@ class Game:
         self.state = self.state.generateSuccessor( agentIndex, action )
       # If the action is Lay a bomb
       if action is 'Lay':
-        self.bomb.append((self.state.getFramesUntilEnd() - 10,self.state.getAgentPosition(agentIndex)))
+        self.bomb.append((self.state.getFramesUntilEnd() - self.rules.BOMB_DURATION, self.state.getAgentPosition(agentIndex), self.state.getAgentState(agentIndex).getBombPower(),agentIndex))
       # Check FramesUntilEnd
       if agentIndex == numAgents-1:
         self.state.minusOneFrame()
 
-      for counter,position in self.bomb:
+      for counter,position,power,index in self.bomb:
         if counter == self.state.data.FramesUntilEnd:
-          self.state.data._bombExplode.append(position)
-          self.state.data.map.remove_object(position)
+          self.state.bombExplode(position,power)
+          self.state.getAgentState(index).recoverABomb()
+          #self.state.data._bombExplode.append((position,power))
+          #self.state.data.map.remove_object(position)
       self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
       # Change the display
       self.display.update( self.state.data )

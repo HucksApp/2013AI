@@ -99,7 +99,9 @@ class Layout:
      o - Capsule
      G - Ghost
      P - Pacman
-	 O - Item
+	 A - Item add Power
+	 S - Item add Speed
+	 N - Item add Bomb_Number
 	 B - Block
 	 b - bomb
     Other characters are ignored.
@@ -117,8 +119,12 @@ class Layout:
       self.walls[x][y] = True
     elif layoutChar == '.':
       self.food[x][y] = True 
-    elif layoutChar == 'O':
-      self.items.append((x,y))
+    elif layoutChar == 'A':
+      self.items.append((x,y,1))
+    elif layoutChar == 'S':
+      self.items.append((x,y,2))
+    elif layoutChar == 'N':
+      self.items.append((x,y,3))
     elif layoutChar == 'b':
       self.bomb.append((x,y))
     elif layoutChar == 'B':

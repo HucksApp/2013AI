@@ -73,7 +73,7 @@ CAPSULE_SIZE = 0.25
 
 # Item graphics
 ITEM_LINE_COLOR = formatColor(1,0,0)
-ITEM_FILL_COLOR = formatColor(1,0.5,0)
+ITEM_FILL_COLOR = [formatColor(0.5,0.5,0.5), formatColor(1,1,1) , formatColor(0,0,0) ]
 ITEM_SIZE = 0.4
 
 # Bomb graphics
@@ -242,6 +242,7 @@ class PacmanGraphics:
     agentIndex = newState._agentMoved
     agentState = newState.agentStates[agentIndex]
 
+    #print 'agentIndex:',agentIndex,'isPacman:',self.agentImages[agentIndex][0].isPacman,' and ',agentState.isPacman
     if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
     prevState, prevImage = self.agentImages[agentIndex]
     if agentState.isPacman:
@@ -259,9 +260,11 @@ class PacmanGraphics:
     if newState._bombExplode != None and len(newState._bombExplode) != 0:
       self.removeBomb(newState._bombExplode, self.bomb)
     if newState._blockBroken != None and len(newState._blockBroken) != 0:
-      self.removeBlock(newState._blockBroken, self.blocks)
+      self.removeBlock(newState._blockBroken, self.block)
     if newState._itemEaten  != None and len(newState._itemEaten) != 0:
       self.removeItem(newState._itemEaten, self.items)
+    if newState._itemDrop  != None and len(newState._itemDrop) != 0:
+      self.addItem(newState._itemDrop, self.items)
     self.infoPane.updateScore(newState.score)
     if 'ghostDistances' in dir(newState):
       self.infoPane.updateGhostDistances(newState.ghostDistances)
@@ -519,14 +522,14 @@ class PacmanGraphics:
 
   def drawItems(self, items ):
     itemImages = {}
-    for item in items:
-      ( screen_x, screen_y ) = self.to_screen(item)
+    for x,y,type in items:
+      ( screen_x, screen_y ) = self.to_screen((x,y))
       dot = circle( (screen_x, screen_y),
                         ITEM_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR,
+                        fillColor = ITEM_FILL_COLOR[type-1],
                         width = 1)
-      itemImages[item] = dot
+      itemImages[(x,y)] = dot
     return itemImages	
 
   def drawBomb(self, bombs ):
@@ -578,14 +581,14 @@ class PacmanGraphics:
       bombImages[cell] = dot
 
   def addItem(self, cells, itemsImages ):
-    for cell in cells:
-      ( screen_x, screen_y ) = self.to_screen(cell)
+    for x,y,type in cells:
+      ( screen_x, screen_y ) = self.to_screen((x,y))
       dot = circle( (screen_x, screen_y),
                         ITEM_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR,
+                        fillColor = ITEM_FILL_COLOR[type-1],
                         width = 1)
-      itemsImages[item] = dot
+      itemsImages[(x,y)] = dot
 
 	
   def drawExpandedCells(self, cells):

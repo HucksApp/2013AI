@@ -66,6 +66,7 @@ class GameState:
   # Accessor methods: use these to access state data #
   ####################################################
 
+  
   def getLegalActions( self, agentIndex=0 ):
     """
     Returns the legal actions for the agent specified.
@@ -73,7 +74,7 @@ class GameState:
     if self.isWin() or self.isLose(): return []
 
     if agentIndex == 0:  # Pacman is moving
-      return PacmanRules.getLegalActions( self )
+      return PacmanRules.getLegalActions( self , agentIndex)
     else:
       return GhostRules.getLegalActions( self, agentIndex )
 
@@ -90,7 +91,7 @@ class GameState:
     # Let agent's logic deal with its action's effects on the board
     if agentIndex == 0:  # Pacman is moving
       state.data._eaten = [False for i in range(state.getNumAgents())]
-      PacmanRules.applyAction( state, action )
+      PacmanRules.applyAction( state, action, agentIndex )
     else:                # A ghost is moving
       GhostRules.applyAction( state, action, agentIndex )
 
@@ -101,7 +102,7 @@ class GameState:
       GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
 
     # Resolve multi-agent effects
-    GhostRules.checkDeath( state, agentIndex )
+    #GhostRules.checkDeath( state, agentIndex )
 
     # Book keeping
     state.data._agentMoved = agentIndex
@@ -147,6 +148,9 @@ class GameState:
 
   def getAgentPosition( self, agentIndex ):
     return self.data.agentStates[agentIndex].getPosition()
+
+  def getAgentState(self, agentIndex):
+    return 	self.data.agentStates[agentIndex]
 	
   def getNumAgents( self ):
     return len( self.data.agentStates )
@@ -211,6 +215,27 @@ class GameState:
   def minusOneFrame( self ):
     self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
     return self.data.FramesUntilEnd
+
+  def bombExplode(self, position, power):
+    x,y = position
+    x_int, y_int = int(x), int(y)
+    if not self.data.map.isBomb((x_int, y_int)): return
+    self.data._bombExplode.append((x_int, y_int))
+    self.data.map.remove_object((x_int, y_int))
+    for dir,vec in Actions._directionsAsList :
+      if not (0,0) is vec:
+        dx, dy = vec
+        next_y = y_int + dy
+        next_x = x_int + dx
+        if self.data.map.isBlock((next_x,next_y)):
+          self.data._blockBroken.append((next_x,next_y))
+          res = self.data.map.remove_object((next_x,next_y))
+          if res != None:
+            self.data._itemDrop.append((next_x,next_y,res))
+        elif self.data.map.isItem((next_x,next_y)):
+          self.data._itemEaten.append((next_x,next_y))
+          self.data.map.remove_object((next_x,next_y))
+            
 	
   #############################################
   #             Helper methods:               #
@@ -268,6 +293,8 @@ class ClassicGameRules:
   These game rules manage the control flow of a game, deciding when
   and how the game starts and ends.
   """
+  BOMB_DURATION = 10 
+  
   def __init__(self, timeout=30):
     self.timeout = timeout
 
@@ -330,15 +357,17 @@ class PacmanRules:
   """
   PACMAN_SPEED=1
 
-  def getLegalActions( state ):
+  def getLegalActions( state , index = 0):
     """
     Returns a list of possible actions.
     """
-    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.map )
+    legal = Actions.getPossibleActions( state.getAgentState(index).configuration, state.data.map )
+    if Actions.LAY in legal and not state.getAgentState(index).hasBomb():
+        legal.remove(Actions.LAY)
     return legal
   getLegalActions = staticmethod( getLegalActions )
 
-  def applyAction( state, action ):
+  def applyAction( state, action, index ):
     """
     Edits the state to reflect the results of the action.
     """
@@ -349,23 +378,24 @@ class PacmanRules:
     pacmanState = state.data.agentStates[0]
 
     # Update Configuration
-    vector = Actions.directionToVector( action, PacmanRules.PACMAN_SPEED )
+    vector = Actions.directionToVector( action, state.getAgentState(index).getSpeed() )
     pacmanState.configuration = pacmanState.configuration.generateSuccessor( vector )
-
+    print 'newPosition:', pacmanState.configuration.getPosition()
     # Eat
     next = pacmanState.configuration.getPosition()
     nearest = nearestPoint( next )
     if manhattanDistance( nearest, next ) <= 0.5 :
       # Remove food
-      PacmanRules.consume( nearest, state )
+      PacmanRules.consume( nearest, state, index )
     # Lay
     if action is 'Lay':
       state.data._bombLaid.append(nearest)
       state.data.map.add_bomb(nearest)
+      state.getAgentState(index).minusABomb()
   applyAction = staticmethod( applyAction )
 
-  def consume( position, state ):
-    x,y = position
+  def consume( position, state , index):
+    #x,y = position
     # Eat food
     """if state.data.food[x][y]:
       state.data.scoreChange += 10
@@ -379,15 +409,14 @@ class PacmanRules:
         state.data._win = True"""
     # Eat capsule
     #if( position in state.getCapsules() ):
-    if state.data.map.map[x][y] == 1:
-      #state.data.capsules.remove( position )
-      state.data.map.map[x][y] = 0
-      state.data._capsuleEaten.append(position)
-      #apply capsule effect
-    if  state.data.map.map[x][y] is 2:
-      #state.data.items.remove( position )
-      state.data.map.map[x][y] = 0
+    if state.data.map.isItem(position):
+      #apply item effect
+      state.getAgentState(index).applyItemEffect(state.data.map.get_data(position))
+      # remove the item
+      state.data.map.remove_object(position)
       state.data._itemEaten.append(position)
+	  
+
 
   consume = staticmethod( consume )
 
@@ -505,7 +534,7 @@ def readCommand( argv ):
                     help=default('the number of GAMES to play'), metavar='GAMES', default=1)
   parser.add_option('-l', '--layout', dest='layout',
                     help=default('the LAYOUT_FILE from which to load the map layout'),
-                    metavar='LAYOUT_FILE', default='mediumClassic')
+                    metavar='LAYOUT_FILE', default='testClassic')
   parser.add_option('-p', '--pacman', dest='pacman',
                     help=default('the agent TYPE in the pacmanAgents module to use'),
                     metavar='TYPE', default='KeyboardAgent')
