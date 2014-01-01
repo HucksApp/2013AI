@@ -151,10 +151,6 @@ class AgentState:
 	
   def isActive(self):
     return self.FramesUntilNextAction == 0
-    
-class BombState:
-  print 'Bombstate'
-  #def __init__(self, )  
   
 class Grid:
   """
@@ -548,7 +544,7 @@ class Game:
     self.agentTimeout = False
     import cStringIO
     self.agentOutput = [cStringIO.StringIO() for agent in agents]
-
+    
   def getProgress(self):
     if self.gameOver:
       return 1.0
@@ -581,11 +577,32 @@ class Game:
     sys.stdout = OLD_STDOUT
     sys.stderr = OLD_STDERR
     
-  def explode(self, position, power):
-    print 'Position: ', position, ' Power: ', power
+  def explode(self, pos, power):
+    print 'Position: ', pos, ' Power: ', power
     for i in range(power * 4):
-      print i
-
+      for case in switch(i % 4):
+        if case(0):
+          dir = (1+(i/4), 0)
+          break
+        if case(1):
+          dir = (0, -1-(i/4))
+          break
+        if case(2):
+          dir = (-1-(i/4), 0)
+          break
+        if case(3):
+          dir = (0, 1+(i/4))
+          break
+      targetpos = (pos[0] + dir[0], pos[1] + dir[1])
+      agentspos = [agent.getPosition for agent in self.state.data.agentStates]
+      if(targetpos in self.state.data.items):
+        print 'item!'
+      elif(self.state.data.block[targetpos[0]][targetpos[1]] == True):
+        print 'block!'
+      elif(self.state.data.layout.isWall(targetpos) == True):
+        print 'wall!'
+      
+      
 
   def run( self ):
     """
