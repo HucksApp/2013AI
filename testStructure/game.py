@@ -324,7 +324,7 @@ class Actions:
     return (dx * speed, dy * speed)
   directionToVector = staticmethod(directionToVector)
 
-  def getPossibleActions(config, walls):
+  def getPossibleActions(config, layout, bomb):
     possible = []
     x, y = config.pos
     x_int, y_int = int(x + 0.5), int(y + 0.5)
@@ -337,8 +337,12 @@ class Actions:
       dx, dy = vec
       next_y = y_int + dy
       next_x = x_int + dx
-      if not walls[next_x][next_y]: possible.append(dir)
+      if not layout.walls[next_x][next_y] and not layout.block[next_x][next_y]:
+ 	    if  ( Directions.STOP is dir ) or not ( (next_x,next_y) in bomb): possible.append(dir)
 
+    #if Actions.LAY in possible and (x_int,y_int) in bomb:
+      #possible.remove('Lay')
+    
     return possible
 
   getPossibleActions = staticmethod(getPossibleActions)
@@ -383,7 +387,7 @@ class GameStateData:
       self.score = prevState.score
       self.FramesUntilEnd = prevState.FramesUntilEnd
     self._foodEaten = None
-    self._capsuleEaten = None
+    self._capsuleEaten = []
     self._bombLaid = []
     self._bombExplode = []
     self._itemEaten = []

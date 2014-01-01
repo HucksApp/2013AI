@@ -252,7 +252,7 @@ class PacmanGraphics:
 
     if newState._foodEaten != None:
       self.removeFood(newState._foodEaten, self.food)
-    if newState._capsuleEaten != None:
+    if newState._capsuleEaten != None and len(newState._capsuleEaten) != 0:
       self.removeCapsule(newState._capsuleEaten, self.capsules)
     if newState._bombLaid != None and len(newState._bombLaid) != 0:
       self.addBomb(newState._bombLaid,self.bomb)
@@ -551,10 +551,11 @@ class PacmanGraphics:
     x, y = cell
     remove_from_screen(foodImages[x][y])
 
-  def removeCapsule(self, cell, capsuleImages ):
-    x, y = cell
-    remove_from_screen(capsuleImages[(x, y)])
-
+  def removeCapsule(self, cells, capsuleImages ):
+    for cell in cells:
+      x, y = cell
+      remove_from_screen(capsuleImages[(x, y)])
+	  
   def removeItem(self, cells, itemImages ):
     for cell in cells:
       x, y = cell

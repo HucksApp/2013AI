@@ -162,6 +162,9 @@ class GameState:
   def getBombs(self):
     return self.data.bomb
 	
+  def getItems(self):
+    return self.data.items
+	
   def getNumFood( self ):
     return self.data.food.count()
 
@@ -285,7 +288,7 @@ class ClassicGameRules:
     """
     if state.isWin(): self.win(state, game)
     if state.isLose(): self.lose(state, game)
-    if state.getFramesUntilEnd == 0: game.gameOver = True
+    if state.getFramesUntilEnd() == 0: game.gameOver = True
 
   def win( self, state, game ):
     if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
@@ -330,11 +333,7 @@ class PacmanRules:
     """
     Returns a list of possible actions.
     """
-    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
-    x, y = state.getPacmanPosition()
-    nearpoint = int(x), int(y)
-    if 'Lay' in legal and nearpoint in state.getBombs():
-      legal.remove('Lay')
+    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout , state.getBombs() )
     return legal
   getLegalActions = staticmethod( getLegalActions )
 
@@ -381,9 +380,11 @@ class PacmanRules:
     if( position in state.getCapsules() ):
       state.data.capsules.remove( position )
       state.data._capsuleEaten.append(position)
-      # Reset all ghosts' scared timers
-      for index in range( 1, len( state.data.agentStates ) ):
-        state.data.agentStates[index].scaredTimer = SCARED_TIME
+      #apply capsule effect
+    if (position in state.getItems()) :
+      state.data.items.remove( position )
+      state.data._itemEaten.append(position)
+
   consume = staticmethod( consume )
 
 class GhostRules:
@@ -397,7 +398,7 @@ class GhostRules:
     reach a dead end, but can turn 90 degrees at intersections.
     """
     conf = state.getGhostState( ghostIndex ).configuration
-    possibleActions = Actions.getPossibleActions( conf, state.data.layout.walls )
+    possibleActions = Actions.getPossibleActions( conf, state.data.layout )
     reverse = Actions.reverseDirection( conf.direction )
     if Directions.STOP in possibleActions:
       possibleActions.remove( Directions.STOP )
