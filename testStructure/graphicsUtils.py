@@ -27,7 +27,7 @@ _canvas_tsize = 12
 _canvas_tserifs = 0
 _box = None
 _bomb = None
-_bomberman = None
+_bomberman = []
 
 def formatColor(r, g, b):
   return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
@@ -193,6 +193,17 @@ def image(pos, file="../../blueghost.gif"):
     # img = PhotoImage(file=file)
     return _canvas.create_image(x, y, image = Tkinter.PhotoImage(file=file), anchor = Tkinter.NW)
 
+def bomberman_image_from(pos, bomberman_index,file="../../blueghost.gif"):
+    global _bomberman
+    if bomberman_index >= len(_bomberman):
+        _bomberman.extend([None for x in range(len(_bomberman),bomberman_index+1)])
+    x, y = pos
+    if _bomberman[bomberman_index] is not None:
+        remove_from_screen(_bomberman[bomberman_index])	
+    _bomberman[bomberman_index] = Tkinter.PhotoImage(file=file)
+    return _canvas.create_image(x, y, image = _bomberman[bomberman_index],anchor=Tkinter.NW)   
+	
+	
 def box_image_from(pos, file="../../blueghost.gif"):
     global _box
     x, y = pos

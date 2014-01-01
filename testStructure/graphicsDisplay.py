@@ -290,11 +290,11 @@ class PacmanGraphics:
       outlineColor = TEAM_COLORS[index % 2]
       fillColor = GHOST_COLORS[index]
       width = PACMAN_CAPTURE_OUTLINE_WIDTH
-
-    return [circle(screen_point, PACMAN_SCALE * self.gridSize,
+    return [bomberman_image_from(screen_point, 0,"./image/Stop1.gif")]
+    """return [circle(screen_point, PACMAN_SCALE * self.gridSize,
                    fillColor = fillColor, outlineColor = outlineColor,
                    endpoints = endpoints,
-                   width = width)]
+                   width = width)]"""
 
   def getEndpoints(self, direction, position=(0,0)):
     x, y = position
@@ -312,11 +312,15 @@ class PacmanGraphics:
       endpoints = (0+delta, 0-delta)
     return endpoints
 
-  def movePacman(self, position, direction, image):
+  def movePacman(self, position, direction, image , index , bomberman_index):
     screenPosition = self.to_screen(position)
     endpoints = self.getEndpoints( direction, position )
     r = PACMAN_SCALE * self.gridSize
-    moveCircle(image[0], screenPosition, r, endpoints)
+    #moveCircle(image[0], screenPosition, r, endpoints)
+    screenPosition = (screenPosition[0] - 10 , screenPosition[1] - 10)
+    img = "./image/%s%d.gif" % (direction,index)
+    image[0] = bomberman_image_from(screenPosition, bomberman_index , img)
+    move_to(image[0],screenPosition[0] , screenPosition[1])
     refresh()
 
   def animatePacman(self, pacman, prevPacman, image):
@@ -332,11 +336,11 @@ class PacmanGraphics:
       frames = 4.0
       for i in range(1,int(frames) + 1):
         pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
-        self.movePacman(pos, self.getDirection(pacman), image)
+        self.movePacman(pos, self.getDirection(pacman), image , i , 0)
         refresh()
         sleep(abs(self.frameTime) / frames)
     else:
-      self.movePacman(self.getPosition(pacman), self.getDirection(pacman), image)
+      self.movePacman(self.getPosition(pacman), self.getDirection(pacman), image , 1 , 0)
     refresh()
 
   def getGhostColor(self, ghost, ghostIndex):
