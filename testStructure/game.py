@@ -580,6 +580,11 @@ class Game:
     # Revert stdout/stderr to originals
     sys.stdout = OLD_STDOUT
     sys.stderr = OLD_STDERR
+    
+  def explode(self, position, power):
+    print 'Position: ', position, ' Power: ', power
+    for i in range(power * 4):
+      print i
 
 
   def run( self ):
@@ -725,6 +730,7 @@ class Game:
         if counter == self.state.data.FramesUntilEnd:
           self.state.data._bombExplode.append(position)
           self.state.data.bomb.remove(position)
+          self.explode(position, power)
       self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
       # Change the display
       self.display.update( self.state.data )
