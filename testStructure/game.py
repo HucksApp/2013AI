@@ -119,13 +119,12 @@ class AgentState:
   """
 
   POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
-  SPEED_TABLE = [0.2, 0.4,0.6, 0.8, 1.0]
+  SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   
-  def __init__( self, startConfiguration, isPacman, speed = 0, N_Bomb = 3 ):
+  def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):
     self.start = startConfiguration
     self.configuration = startConfiguration
-    self.isPacman = True
     self.speed = speed
     self.FramesUntilNextAction = 0
     self.Bomb_Power = 0
@@ -144,7 +143,7 @@ class AgentState:
     return hash(hash(self.configuration) + 13 * hash(self.Bomb_Power))
 
   def copy( self ):
-    state = AgentState( self.start, self.isPacman, self.speed, self.Bomb_Total_Number )
+    state = AgentState( self.start, self.speed, self.Bomb_Total_Number )
     state.configuration = self.configuration
     state.FramesUntilNextFrame = self.FramesUntilNextAction
     state.Bomb_Power = self.Bomb_Power
@@ -161,8 +160,6 @@ class AgentState:
   def getCounter(self):
     return self.FramesUntilNextAction
 	
-  def isPacman(self):
-    return True
 	
   def getBombPower(self):
     return self.POWER_TABLE[self.Bomb_Power]
@@ -461,10 +458,8 @@ class Map:
   def remove_object(self, pos):
     x,y = pos
     if self.map[x][y] in self.BLOCK:
-        print 'Broke a block:',self.map[x][y],' at (',x,',',y,')'
         self.map[x][y] = self.map[x][y] - 21
         if self.map[x][y] in self.ITEM:
-            print 'get Item Drop:',self.map[x][y]
             return self.map[x][y]
     else:
         self.map[x][y] = self.EMPTY
@@ -592,10 +587,10 @@ class GameStateData:
       if agentState.configuration == None: continue
       x,y = [int( i ) for i in nearestPoint( agentState.configuration.pos )]
       agent_dir = agentState.configuration.direction
-      if agentState.isPacman:
-        map[x][y] = self._pacStr( agent_dir )
-      else:
-        map[x][y] = self._ghostStr( agent_dir )
+      #if agentState.isPacman:
+      map[x][y] = self._pacStr( agent_dir )
+      #else:
+        #map[x][y] = self._ghostStr( agent_dir )
 
     for x, y in self.capsules:
       map[x][y] = 'o'
@@ -629,7 +624,7 @@ class GameStateData:
       return '3'
     return 'E'
 
-  def initialize( self, layout, numGhostAgents ):
+  def initialize( self, layout, numAgents ):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
@@ -645,12 +640,11 @@ class GameStateData:
     self.FramesUntilEnd  = 3000
 
     self.agentStates = []
-    numGhosts = 0
-    for isPacman, pos in layout.agentPositions:
-      if not isPacman:
-        if numGhosts == numGhostAgents: continue # Max ghosts reached already
-        else: numGhosts += 1
-      self.agentStates.append( AgentState( Configuration( pos, Directions.STOP), isPacman) )
+    num = 0
+    for index, pos in layout.agentPositions:
+      if num == numAgents: continue # Max ghosts reached already
+      else: num += 1
+      self.agentStates.append( AgentState( Configuration(pos, Directions.STOP)) )
     self._eaten = [False for a in self.agentStates]
 
 try:

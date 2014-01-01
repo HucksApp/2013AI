@@ -28,13 +28,13 @@ class Layout:
     self.items = []
     self.bomb = []
     self.agentPositions = []
-    self.numGhosts = 0
+    self.numAgents = 0
     self.processLayoutText(layoutText)
     self.layoutText = layoutText
     # self.initializeVisibilityMatrix()
     
-  def getNumGhosts(self):
-    return self.numGhosts
+  def getNumAgents(self):
+    return self.numAgents
     
   def initializeVisibilityMatrix(self):
     global VISIBILITY_MATRIX_CACHE
@@ -97,8 +97,7 @@ class Layout:
      % - Wall                               
      . - Food
      o - Capsule
-     G - Ghost
-     P - Pacman
+     P,1,2,3,4 - Agent
 	 A - Item add Power
 	 S - Item add Speed
 	 N - Item add Bomb_Number
@@ -131,14 +130,9 @@ class Layout:
       self.block[x][y] = True
     elif layoutChar == 'o':    
       self.capsules.append((x, y))   
-    elif layoutChar == 'P':    
-      self.agentPositions.append( (0, (x, y) ) )
-    elif layoutChar in ['G']:    
-      self.agentPositions.append( (1, (x, y) ) )
-      self.numGhosts += 1
-    elif layoutChar in  ['1', '2', '3', '4']:
-      self.agentPositions.append( (int(layoutChar), (x,y)))
-      self.numGhosts += 1 
+    elif layoutChar in  ['P','1', '2', '3', '4']:
+      self.agentPositions.append( (self.numAgents, (x,y)))
+      self.numAgents += 1 
 def getLayout(name, back = 2):
   if name.endswith('.lay'):
     layout = tryToLoad('layouts/' + name)
