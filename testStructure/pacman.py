@@ -37,6 +37,7 @@ from game import GameStateData
 from game import Game
 from game import Directions
 from game import Actions
+from game import Map
 from util import nearestPoint
 from util import manhattanDistance
 import util, layout
@@ -333,7 +334,7 @@ class PacmanRules:
     """
     Returns a list of possible actions.
     """
-    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout , state.getBombs() )
+    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.map )
     return legal
   getLegalActions = staticmethod( getLegalActions )
 
@@ -360,13 +361,13 @@ class PacmanRules:
     # Lay
     if action is 'Lay':
       state.data._bombLaid.append(nearest)
-      state.data.bomb.append(nearest)
+      state.data.map.add_bomb(nearest)
   applyAction = staticmethod( applyAction )
 
   def consume( position, state ):
     x,y = position
     # Eat food
-    if state.data.food[x][y]:
+    """if state.data.food[x][y]:
       state.data.scoreChange += 10
       state.data.food = state.data.food.copy()
       state.data.food[x][y] = False
@@ -375,14 +376,17 @@ class PacmanRules:
       numFood = state.getNumFood()
       if numFood == 0 and not state.data._lose:
         state.data.scoreChange += 500
-        state.data._win = True
+        state.data._win = True"""
     # Eat capsule
-    if( position in state.getCapsules() ):
-      state.data.capsules.remove( position )
+    #if( position in state.getCapsules() ):
+    if state.data.map.map[x][y] == 1:
+      #state.data.capsules.remove( position )
+      state.data.map.map[x][y] = 0
       state.data._capsuleEaten.append(position)
       #apply capsule effect
-    if (position in state.getItems()) :
-      state.data.items.remove( position )
+    if  state.data.map.map[x][y] is 2:
+      #state.data.items.remove( position )
+      state.data.map.map[x][y] = 0
       state.data._itemEaten.append(position)
 
   consume = staticmethod( consume )
@@ -398,7 +402,7 @@ class GhostRules:
     reach a dead end, but can turn 90 degrees at intersections.
     """
     conf = state.getGhostState( ghostIndex ).configuration
-    possibleActions = Actions.getPossibleActions( conf, state.data.layout )
+    possibleActions = Actions.getPossibleActions( conf, state.data.map )
     reverse = Actions.reverseDirection( conf.direction )
     if Directions.STOP in possibleActions:
       possibleActions.remove( Directions.STOP )
