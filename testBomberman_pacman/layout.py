@@ -23,7 +23,10 @@ class Layout:
     self.height= len(layoutText)
     self.walls = Grid(self.width, self.height, False)
     self.food = Grid(self.width, self.height, False)
+    self.block = Grid(self.width, self.height, False)
     self.capsules = []
+    self.items = []
+    self.bomb = []
     self.agentPositions = []
     self.numGhosts = 0
     self.processLayoutText(layoutText)
@@ -96,6 +99,9 @@ class Layout:
      o - Capsule
      G - Ghost
      P - Pacman
+	 O - Item
+	 B - Block
+	 b - bomb
     Other characters are ignored.
     """
     maxY = self.height - 1
@@ -111,6 +117,12 @@ class Layout:
       self.walls[x][y] = True
     elif layoutChar == '.':
       self.food[x][y] = True 
+    elif layoutChar == 'O':
+      self.items.append((x,y))
+    elif layoutChar == 'b':
+      self.bomb.append((x,y))
+    elif layoutChar == 'B':
+      self.block[x][y] = True
     elif layoutChar == 'o':    
       self.capsules.append((x, y))   
     elif layoutChar == 'P':    

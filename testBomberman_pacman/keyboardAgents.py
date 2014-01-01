@@ -20,6 +20,7 @@ class KeyboardAgent(Agent):
   NORTH_KEY = 'w' 
   SOUTH_KEY = 's'
   STOP_KEY = 'q'
+  LAY_KEY = 'z'
 
   def __init__( self, index = 0 ):
     
@@ -33,19 +34,17 @@ class KeyboardAgent(Agent):
     keys = keys_waiting() + keys_pressed()
     if keys != []:
       self.keys = keys
-    
+
     legal = state.getLegalActions(self.index)
     move = self.getMove(legal)
     
-    if len(keys) == 0:
-      move =Directions.STOP
-    """if move == Directions.STOP:
+    #if move == Directions.STOP:
       # Try to move in the same direction as before
-      if self.lastMove in legal:
-        move = self.lastMove"""
+      #if self.lastMove in legal:
+        #move = self.lastMove
     
     if (self.STOP_KEY in self.keys) and Directions.STOP in legal: move = Directions.STOP
-
+    elif (self.LAY_KEY in self.keys) and 'Lay' in legal: move = 'Lay'
     if move not in legal:
       move = random.choice(legal)
       
@@ -70,6 +69,7 @@ class KeyboardAgent2(KeyboardAgent):
   NORTH_KEY = 'i' 
   SOUTH_KEY = 'k'
   STOP_KEY = 'u'
+  LAY_KEY = 'n'
 
   def getMove(self, legal):
     move = Directions.STOP

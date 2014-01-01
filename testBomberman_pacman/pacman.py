@@ -144,6 +144,9 @@ class GameState:
   def getGhostPositions(self):
     return [s.getPosition() for s in self.getGhostStates()]
 
+  def getAgentPosition( self, agentIndex ):
+    return self.data.agentStates[agentIndex].getPosition()
+	
   def getNumAgents( self ):
     return len( self.data.agentStates )
 
@@ -156,6 +159,9 @@ class GameState:
     """
     return self.data.capsules
 
+  def getBombs(self):
+    return self.data.bomb
+	
   def getNumFood( self ):
     return self.data.food.count()
 
@@ -195,6 +201,13 @@ class GameState:
   def isWin( self ):
     return self.data._win
 
+  def getFramesUntilEnd(self ):
+    return self.data.FramesUntilEnd
+
+  def minusOneFrame( self ):
+    self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
+    return self.data.FramesUntilEnd
+	
   #############################################
   #             Helper methods:               #
   # You shouldn't need to call these directly #
@@ -260,6 +273,8 @@ class ClassicGameRules:
     initState.initialize( layout, len(ghostAgents) )
     game = Game(agents, display, self, catchExceptions=catchExceptions)
     game.state = initState
+    for position in layout.bomb:
+      game.bomb.append((initState.getFramesUntilEnd() - 10, position, 1))
     self.initialState = initState.deepCopy()
     self.quiet = quiet
     return game
@@ -270,6 +285,7 @@ class ClassicGameRules:
     """
     if state.isWin(): self.win(state, game)
     if state.isLose(): self.lose(state, game)
+    if state.getFramesUntilEnd() == 0: game.gameOver = True
 
   def win( self, state, game ):
     if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
@@ -314,7 +330,12 @@ class PacmanRules:
     """
     Returns a list of possible actions.
     """
-    return Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+    legal = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls, state.data.block, state.data.bomb)
+    x, y = state.getPacmanPosition()
+    nearpoint = int(x), int(y)
+    if 'Lay' in legal and nearpoint in state.getBombs():
+      legal.remove('Lay')
+    return legal
   getLegalActions = staticmethod( getLegalActions )
 
   def applyAction( state, action ):
@@ -337,6 +358,10 @@ class PacmanRules:
     if manhattanDistance( nearest, next ) <= 0.5 :
       # Remove food
       PacmanRules.consume( nearest, state )
+    # Lay
+    if action is 'Lay': 
+      state.data._bombLaid.append(nearest)
+      state.data.bomb.append(nearest)   
   applyAction = staticmethod( applyAction )
 
   def consume( position, state ):
@@ -346,7 +371,7 @@ class PacmanRules:
       state.data.scoreChange += 10
       state.data.food = state.data.food.copy()
       state.data.food[x][y] = False
-      state.data._foodEaten = position
+      state.data._foodEaten= position
       # TODO: cache numFood?
       numFood = state.getNumFood()
       if numFood == 0 and not state.data._lose:
@@ -355,7 +380,7 @@ class PacmanRules:
     # Eat capsule
     if( position in state.getCapsules() ):
       state.data.capsules.remove( position )
-      state.data._capsuleEaten = position
+      state.data._capsuleEaten.append(position)
       # Reset all ghosts' scared timers
       for index in range( 1, len( state.data.agentStates ) ):
         state.data.agentStates[index].scaredTimer = SCARED_TIME
@@ -487,7 +512,7 @@ def readCommand( argv ):
                     help=default('the ghost agent TYPE in the ghostAgents module to use'),
                     metavar = 'TYPE', default='RandomGhost')
   parser.add_option('-k', '--numghosts', type='int', dest='numGhosts',
-                    help=default('The maximum number of ghosts to use'), default=4)
+                    help=default('The maximum number of ghosts to use'), default=0)
   parser.add_option('-z', '--zoom', type='float', dest='zoom',
                     help=default('Zoom the size of the graphics window'), default=1.0)
   parser.add_option('-f', '--fixRandomSeed', action='store_true', dest='fixRandomSeed',
@@ -661,7 +686,6 @@ if __name__ == '__main__':
   """
   args = readCommand( sys.argv[1:] ) # Get game components based on input
   runGames( **args )
-
   # import cProfile
   # cProfile.run("runGames( **args )")
   pass

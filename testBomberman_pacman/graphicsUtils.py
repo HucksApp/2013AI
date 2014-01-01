@@ -25,6 +25,8 @@ _canvas_y = None
 _canvas_col = None      # Current colour (set to black below)
 _canvas_tsize = 12
 _canvas_tserifs = 0
+_box = None
+_bomb = None
 _bomberman = None
 
 def formatColor(r, g, b):
@@ -48,7 +50,7 @@ def sleep(secs):
         _root_window.after(int(1000 * secs), _root_window.quit)
         _root_window.mainloop()
 
-def begin_graphics(width=640, height=480, color=formatColor(0.5, 0.5, 0.5), title=None):
+def begin_graphics(width=640, height=480, color=formatColor(0, 0, 0), title=None):
 
     global _root_window, _canvas, _canvas_x, _canvas_y, _canvas_xs, _canvas_ys, _bg_color
 
@@ -186,15 +188,37 @@ def circle(pos, r, outlineColor, fillColor, endpoints=None, style='pieslice', wi
     return _canvas.create_arc(x0, y0, x1, y1, outline=outlineColor, fill=fillColor,
                               extent=e[1] - e[0], start=e[0], style=style, width=width)
 
-def image_from(pos, file="../../blueghost.gif"):
+def image(pos, file="../../blueghost.gif"):
+    x, y = pos
+    # img = PhotoImage(file=file)
+    return _canvas.create_image(x, y, image = Tkinter.PhotoImage(file=file), anchor = Tkinter.NW)
+    
+def player_image_from(pos, file="../../blueghost.gif"):
     global _bomberman
     x, y = pos
     if _bomberman is not None:
         remove_from_screen(_bomberman)	
     _bomberman = Tkinter.PhotoImage(file=file)
     return _canvas.create_image(x, y, image = _bomberman,anchor=Tkinter.NW)
+
+def box_image_from(pos, file="../../blueghost.gif"):
+    global _box
+    x, y = pos
+    if _box is not None:
+        return _canvas.create_image(x,y,image = _box, anchor = Tkinter.NW)
+        #remove_from_screen(_box)	
+    _box = Tkinter.PhotoImage(file=file)
+    return _canvas.create_image(x, y, image = _box,anchor=Tkinter.NW)   
     
-    
+def bomb_image_from(pos, file="../../blueghost.gif"):
+    global _bomb
+    x, y = pos
+    if _bomb is not None:
+        return _canvas.create_image(x,y,image=_bomb,anchor=Tkinter.NW)
+        #remove_from_screen(_box)	
+    _bomb = Tkinter.PhotoImage(file=file)
+    return _canvas.create_image(x, y, image = _bomb,anchor=Tkinter.NW)   	
+	
 def refresh():
       _canvas.update_idletasks()
                                                     
@@ -387,9 +411,8 @@ ghost_shape = [
 if __name__ == '__main__':
   begin_graphics()
   clear_screen()
-  ghost_shape = [(x * 20 + 20, -y * 20 - 20) for x, y in ghost_shape]
+  ghost_shape = [(x * 10 + 20, y * 10 + 20) for x, y in ghost_shape]
   g = polygon(ghost_shape, formatColor(1, 1, 1))
   move_to(g, (50, 50))
-  circle((150, 150), 20, formatColor(0.7, 0.3, 0.0), formatColor(1, 0.0, 0.0) ,endpoints=[15, - 15])
-  image_from((200, 200),'Idle3.gif')
-  sleep(10)
+  circle((150, 150), 20, formatColor(0.7, 0.3, 0.0), endpoints=[15, - 15])
+  sleep(2)
