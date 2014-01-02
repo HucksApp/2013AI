@@ -313,6 +313,76 @@ def reconstituteGrid(bitRep):
   width, height = bitRep[:2]
   return Grid(width, height, bitRepresentation= bitRep[2:])
 
+  
+class Map(Grid):
+
+  BLOCK_CONST = 10
+  BOMB = 31
+  EMPTY = 0
+  WALL = 11
+  ITEM = range(1,10)
+  BLOCK = range(21,30)
+	
+  def __init__(self, width , height , layout = None ):
+    if layout is None : Grid.__init__(self,width,height)
+    else:
+      Grid.__init__(self,layout.width,layout.height)
+      for x in range(self.width):
+          for y in range(self.height):
+              if layout.walls[x][y]: self[x][y] = self.WALL
+              elif layout.block[x][y]: self[x][y] = random.choice(range(21,25))
+              elif (x,y) in layout.capsules: self[x][y] = 1
+              elif (x,y,1) in layout.items: self[x][y] = 1
+              elif (x,y,2) in layout.items: self[x][y] = 2
+              elif (x,y,3) in layout.items: self[x][y] = 3
+              elif (x,y) in layout.bomb: self[x][y] = self.BOMB
+			
+  def isWall(self,pos):
+    x,y = pos
+    return self[x][y] == self.WALL
+	
+  def isItem(self,pos):
+    x,y = pos
+    return self[x][y] in self.ITEM
+	
+  def isBomb(self, pos):
+    x,y = pos
+    return self[x][y] == self.BOMB
+	
+  def isBlock(self , pos):
+    x,y = pos
+    return self[x][y] in self.BLOCK
+	
+  def isBlocked(self, pos):
+    x,y = pos
+    return self[x][y] > self.BLOCK_CONST
+	
+  def remove_object(self, pos):
+    x,y = pos
+    if self[x][y] in self.BLOCK:
+        self[x][y] = self[x][y] - 21
+        if self[x][y] in self.ITEM:
+            return self[x][y]
+    else:
+        self[x][y] = self.EMPTY
+    return None
+	   
+  def add_bomb(self, pos):
+    x,y = pos
+    self[x][y] = self.BOMB  
+
+  def copy(self):
+    g = Map(self.width, self.height)
+    g.data = [x[:] for x in self.data]
+    return g
+  
+  def deepCopy(self):
+    return self.copy()
+
+  def shallowCopy(self):
+    g = Map(self.width, self.height)
+    g.data = self.data
+    return g
 ####################################
 # Parts you shouldn't have to read #
 ####################################
@@ -377,11 +447,8 @@ class Actions:
       dx, dy = vec
       next_y = y_int + dy
       next_x = x_int + dx
-      if not map.isWall((next_x,next_y)) and not map.isBlock((next_x,next_y)):
+      if not map.isBlock((next_x,next_y)) and not map.isWall((next_x,next_y)):
  	    if  ( Directions.STOP is dir ) or not ( map.isBomb((next_x,next_y))): possible.append(dir)
-
-    #if Actions.LAY in possible and (x_int,y_int) in bomb:
-      #possible.remove('Lay')
     
     return possible
 
@@ -406,89 +473,7 @@ class Actions:
     x, y = position
     return (x + dx, y + dy)
   getSuccessor = staticmethod(getSuccessor)
-
-  
-class Map:
-
-  BLOCK_CONST = 10
-  BOMB = 31
-  EMPTY = 0
-  WALL = 11
-  ITEM = range(1,10)
-  BLOCK = range(21,30)
-	
-  def __init__(self, layout):
-    if layout == None:
-        self.width = self.height = 0
-        self.map = None
-    else:
-        self.width = layout.width
-        self.height= layout.height
-        self.map = Grid(self.width, self.height, 0)
-        for x in range(self.width):
-            for y in range(self.height):
-                if layout.walls[x][y]: self.map[x][y] = self.WALL
-                elif layout.block[x][y]: self.map[x][y] = random.choice(range(21,25))
-                elif (x,y) in layout.capsules: self.map[x][y] = 1
-                elif (x,y,1) in layout.items: self.map[x][y] = 1
-                elif (x,y,2) in layout.items: self.map[x][y] = 2
-                elif (x,y,3) in layout.items: self.map[x][y] = 3
-                elif (x,y) in layout.bomb: self.map[x][y] = self.BOMB
-
-  def isWall(self,pos):
-    x,y = pos
-    return self.map[x][y] == self.WALL
-	
-  def isItem(self,pos):
-    x,y = pos
-    return self.map[x][y] in self.ITEM
-	
-  def isBomb(self, pos):
-    x,y = pos
-    return self.map[x][y] == self.BOMB
-	
-  def isBlock(self , pos):
-    x,y = pos
-    return self.map[x][y] in self.BLOCK
-	
-  def isBlocked(self, pos):
-    x,y = pos
-    return self.map[x][y] > self.BLOCK_CONST
-	
-  def remove_object(self, pos):
-    x,y = pos
-    if self.map[x][y] in self.BLOCK:
-        self.map[x][y] = self.map[x][y] - 21
-        if self.map[x][y] in self.ITEM:
-            return self.map[x][y]
-    else:
-        self.map[x][y] = self.EMPTY
-    return None
-	   
-  def add_bomb(self, pos):
-    x,y = pos
-    self.map[x][y] = self.BOMB
-
-  def get_data(self, pos):
-    x, y = pos
-    return self.map[x][y]
-	
-  def __eq__(self, other):
-    return self.map == other
-	
-  def shallowCopy(self):
-    map = Map(None)
-    map.width = self.width
-    map.height = self.height
-    map.map = self.map.shallowCopy()
-    return map
-	
-  def deepCopy(self):
-    map = Map(None)
-    map.width = self.width
-    map.height = self.height
-    map.map = self.map.deepCopy()
-    return map
+		
   
 class GameStateData:
   """
@@ -499,19 +484,12 @@ class GameStateData:
     Generates a new data packet by copying information from its predecessor.
     """
     if prevState != None:
-      #self.food = prevState.food.shallowCopy()
-      #self.block = prevState.block.shallowCopy()
-      #self.capsules = prevState.capsules[:]
-      #self.items = prevState.items[:]
-      #self.bomb = prevState.bomb[:]
       self.agentStates = self.copyAgentStates( prevState.agentStates )
-      self.layout = prevState.layout
+      #self.layout = prevState.layout
       self.map = prevState.map
       self._eaten = prevState._eaten
       self.score = prevState.score
       self.FramesUntilEnd = prevState.FramesUntilEnd
-    self._foodEaten = None
-    self._capsuleEaten = []
     self._bombLaid = []
     self._bombExplode = []
     self._itemEaten = []
@@ -528,8 +506,7 @@ class GameStateData:
     #state.layout = self.layout.deepCopy()
     state.map = self.map.deepCopy()
     state._agentMoved = self._agentMoved
-    state._foodEaten = self._foodEaten
-    state._capsuleEaten = self._capsuleEaten
+    state._itemDrop = self._itemDrop
     state._itemEaten = self._itemEaten
     state._blockBroken = self._blockBroken
     state._bombExplode = self._bombExplode
@@ -628,13 +605,7 @@ class GameStateData:
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    #self.food = layout.food.copy()
-    #self.block = layout.block.copy()
-    #self.capsules = layout.capsules[:]
-    #self.items = layout.items[:]
-    #self.bomb = layout.bomb[:]
-    self.layout = layout
-    self.map = Map(layout)
+    self.map = Map(0,0,layout)
     self.score = 0
     self.scoreChange = 0
     self.FramesUntilEnd  = 3000

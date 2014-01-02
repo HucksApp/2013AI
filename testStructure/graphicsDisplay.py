@@ -85,10 +85,10 @@ BOMB_SIZE = 0.4
 WALL_RADIUS = 0.15
 
 class InfoPane:
-  def __init__(self, layout, gridSize):
+  def __init__(self, width, height, gridSize):
     self.gridSize = gridSize
-    self.width = (layout.width) * gridSize
-    self.base = (layout.height + 1) * gridSize
+    self.width = (width) * gridSize
+    self.base = (height + 1) * gridSize
     self.height = INFO_PANE_HEIGHT
     self.fontSize = 24
     self.textColor = PACMAN_COLOR
@@ -177,21 +177,21 @@ class PacmanGraphics:
     self.previousState = state
 
   def startGraphics(self, state):
-    self.layout = state.layout
-    layout = self.layout
-    self.width = layout.width
-    self.height = layout.height
+    self.map = state.map
+    map = self.map
+    self.width = map.width
+    self.height = map.height
     self.make_window(self.width, self.height)
-    self.infoPane = InfoPane(layout, self.gridSize)
-    self.currentState = layout
+    self.infoPane = InfoPane(self.width,self.height, self.gridSize)
+    self.currentState = map
 
   def drawDistributions(self, state):
-    walls = state.layout.walls
+    map = state.map
     dist = []
-    for x in range(walls.width):
+    for x in range(map.width):
       distx = []
       dist.append(distx)
-      for y in range(walls.height):
+      for y in range(map.height):
           ( screen_x, screen_y ) = self.to_screen( (x, y) )
           block = square( (screen_x, screen_y),
                           0.5 * self.gridSize,
@@ -201,13 +201,12 @@ class PacmanGraphics:
     self.distributionImages = dist
 
   def drawStaticObjects(self, state):
-    layout = self.layout
-    self.drawWalls(layout.walls)
-    self.block = self.drawBlocks(layout.block)
-    self.food = self.drawFood(layout.food)
-    self.capsules = self.drawCapsules(layout.capsules)
-    self.items = self.drawItems(layout.items)
-    self.bomb = self.drawBomb(layout.bomb)
+    #layout = self.layout
+    map = self.map
+    self.drawWalls(map)
+    self.block = self.drawBlocks(map)
+    self.items = self.drawItems(map)
+    self.bomb = self.drawBomb(map)
     refresh()
 
   def drawAgentObjects(self, state):
@@ -240,10 +239,6 @@ class PacmanGraphics:
       #self.moveGhost(agentState, agentIndex, prevState, prevImage)
     self.agentImages[agentIndex] = (agentState, prevImage)
 
-    if newState._foodEaten != None:
-      self.removeFood(newState._foodEaten, self.food)
-    if newState._capsuleEaten != None and len(newState._capsuleEaten) != 0:
-      self.removeCapsule(newState._capsuleEaten, self.capsules)
     if newState._bombLaid != None and len(newState._bombLaid) != 0:
       self.addBomb(newState._bombLaid,self.bomb)
     if newState._bombExplode != None and len(newState._bombExplode) != 0:
@@ -369,18 +364,18 @@ class PacmanGraphics:
       if self.capture and (xNum * 2) >= wallMatrix.width: wallColor = TEAM_COLORS[1]
 
       for yNum, cell in enumerate(x):
-        if cell: # There's a wall here
+        if wallMatrix.isWall((xNum,yNum)): # There's a wall here
           pos = (xNum, yNum)
           screen = self.to_screen(pos)
 
           square( screen ,0.5 * self.gridSize,color = wallColor, filled = 1, behind=2)		  		  
 
-  def isWall(self, x, y, walls):
+  """def isWall(self, x, y, walls):
     if x < 0 or y < 0:
       return False
     if x >= walls.width or y >= walls.height:
       return False
-    return walls[x][y]
+    return walls[x][y]"""
 
   def drawBlocks(self, blockMatrix):
     blockImages = []
@@ -391,7 +386,7 @@ class PacmanGraphics:
       imageRow = []
       blockImages.append(imageRow)
       for yNum, cell in enumerate(x):
-        if cell: # There's a block here
+        if blockMatrix.isBlock((xNum,yNum)): # There's a block here
           pos = (xNum, yNum)
           screen_x, screen_y = self.to_screen(pos)
           #block = square( screen ,0.5 * self.gridSize,color = blockColor, filled = 1, behind=2)
@@ -400,78 +395,39 @@ class PacmanGraphics:
         else:
           imageRow.append(None)
     return blockImages
-		  
-  def drawFood(self, foodMatrix ):
-    foodImages = []
-    color = FOOD_COLOR
-    for xNum, x in enumerate(foodMatrix):
-      if self.capture and (xNum * 2) <= foodMatrix.width: color = TEAM_COLORS[0]
-      if self.capture and (xNum * 2) > foodMatrix.width: color = TEAM_COLORS[1]
-      imageRow = []
-      foodImages.append(imageRow)
-      for yNum, cell in enumerate(x):
-        if cell: # There's food here
-          screen_x, screen_y = self.to_screen((xNum, yNum ))
-          """dot = circle( screen,
-                        FOOD_SIZE * self.gridSize,
-                        outlineColor = color, fillColor = color,
-                        width = 1)"""
-          dot = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
-          imageRow.append(dot)
-        else:
-          imageRow.append(None)
-    return foodImages
 
-  def drawCapsules(self, capsules ):
-    capsuleImages = {}
-    for capsule in capsules:
-      ( screen_x, screen_y ) = self.to_screen(capsule)
-      dot = circle( (screen_x, screen_y),
-                        CAPSULE_SIZE * self.gridSize,
-                        outlineColor = CAPSULE_COLOR,
-                        fillColor = CAPSULE_COLOR,
-                        width = 1)
-      capsuleImages[capsule] = dot
-    return capsuleImages
-
-  def drawItems(self, items ):
+  def drawItems(self, map ):
     itemImages = {}
-    for x,y,type in items:
-      ( screen_x, screen_y ) = self.to_screen((x,y))
-      dot = circle( (screen_x, screen_y),
-                        ITEM_SIZE * self.gridSize,
+    for x in range(map.width):
+      for y in range(map.height):
+        if map.isItem((x,y)): # There's a bomb here
+          screen_x, screen_y = self.to_screen((x,y))
+          dot = circle( (screen_x, screen_y),
+                        BOMB_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR[type-1],
+                        fillColor = ITEM_FILL_COLOR[map[xNum][yNum]-1],
                         width = 1)
-      itemImages[(x,y)] = dot
-    return itemImages	
+          itemImages[(x,y)] = dot
+    return itemImages
 
-  def drawBomb(self, bombs ):
+  def drawBomb(self, bombMatrix ):
     bombImages = {}
-    for bomb in bombs:
-      ( screen_x, screen_y ) = self.to_screen(bomb)
-      dot = circle( (screen_x, screen_y),
+    for x in range(bombMatrix.width):
+      for y in range(bombMatrix.height):
+        if bombMatrix.isBomb((x,y)): # There's a bomb here
+          screen_x, screen_y = self.to_screen((x,y))
+          dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
                         width = 1)
-      #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
-      bombImages[bomb] = dot
+          bombImages[(x,y)] = dot
     return bombImages
 	
   def removeBlock(self, cells, blockImages ):
     for cell in cells:
       x, y = cell
       remove_from_screen(blockImages[x][y])
-	
-  def removeFood(self, cell, foodImages ):
-    x, y = cell
-    remove_from_screen(foodImages[x][y])
-
-  def removeCapsule(self, cells, capsuleImages ):
-    for cell in cells:
-      x, y = cell
-      remove_from_screen(capsuleImages[(x, y)])
 	  
   def removeItem(self, cells, itemImages ):
     for cell in cells:

@@ -72,7 +72,6 @@ class GameState:
     Returns the legal actions for the agent specified.
     """
     if self.isWin() or self.isLose(): return []
-
     return BombermanRules.getLegalActions( self , agentIndex)
 
   def generateSuccessor( self, agentIndex, action):
@@ -113,12 +112,6 @@ class GameState:
   def getScore( self ):
     return self.data.score
 
-  def getCapsules(self):
-    """
-    Returns a list of positions (x,y) of the remaining capsules.
-    """
-    return self.data.capsules
-
   def getBombs(self):
     return self.data.bomb
 	
@@ -128,35 +121,8 @@ class GameState:
   def getNumFood( self ):
     return self.data.food.count()
 
-  def getFood(self):
-    """
-    Returns a Grid of boolean food indicator variables.
-
-    Grids can be accessed via list notation, so to check
-    if there is food at (x,y), just call
-
-    currentFood = state.getFood()
-    if currentFood[x][y] == True: ...
-    """
-    return self.data.food
-
-  def getWalls(self):
-    """
-    Returns a Grid of boolean wall indicator variables.
-
-    Grids can be accessed via list notation, so to check
-    if there is food at (x,y), just call
-
-    walls = state.getWalls()
-    if walls[x][y] == True: ...
-    """
-    return self.data.layout.walls
-
-  def hasFood(self, x, y):
-    return self.data.food[x][y]
-
   def hasWall(self, x, y):
-    return self.data.layout.walls[x][y]
+    return self.data.map.isWall((x,y))
 
   def isLose( self ):
     return self.data._lose
@@ -317,6 +283,7 @@ class BombermanRules:
     """
     Returns a list of possible actions.
     """
+
     legal = Actions.getPossibleActions( state.getAgentState(index).configuration, state.data.map )
     if Actions.LAY in legal and not state.getAgentState(index).hasBomb():
         legal.remove(Actions.LAY)
