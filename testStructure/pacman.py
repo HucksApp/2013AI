@@ -86,8 +86,9 @@ class GameState:
 
     # Let agent's logic deal with its action's effects on the board
 
-    state.data._eaten = [False for i in range(state.getNumAgents())]
-    BombermanRules.applyAction( state, action, agentIndex )
+    #state.data._eaten = [False for i in range(state.getNumAgents())]
+    if not state.data._eaten[agentIndex]:
+      BombermanRules.applyAction( state, action, agentIndex )
 
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
@@ -473,7 +474,10 @@ def readCommand( argv ):
                     help='Turns on exception handling and timeouts during games', default=False)
   parser.add_option('--timeout', dest='timeout', type='int',
                     help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
-
+  parser.add_option('-m', dest='manual', type='int',
+                    help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
+					
+					
   options, otherjunk = parser.parse_args(argv)
   if len(otherjunk) != 0:
     raise Exception('Command line input not understood: ' + str(otherjunk))
@@ -493,10 +497,14 @@ def readCommand( argv ):
   if options.numTraining > 0:
     args['numTraining'] = options.numTraining
     if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
-  if options.numAgent > 1 :
+  if options.numAgent > 1 and options.manual >= 0 :
     from keyboardAgents import KeyboardAgent
-    args['agents'] = [KeyboardAgent(0)]
-    args['agents'].extend([ agentType(i+1) for i in range(options.numAgent-1)]) # Instantiate Pacman with agentArgs
+    args['agents'] = []
+    args['agents'].extend([agentType(i) for i in range(options.manual)])
+    args['agents'].append(KeyboardAgent(options.manual))
+    args['agents'].extend([ agentType(i+1) for i in range(options.manual+1,options.numAgent-1)]) # Instantiate Pacman with agentArgs
+  elif options.numAgent > 1:
+    args['agents'] =[ agentType(i) for i in range(options.numAgent)] # Instantiate Pacman with agentArgs
   else:
     args['agents'] = [agentType(0)]
   

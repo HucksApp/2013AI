@@ -792,8 +792,9 @@ class Game:
           self._agentCrash(agentIndex)
           self.unmute()
           return
-      else:
+      elif not self.state.data._eaten[agentIndex]:
         action = agent.getAction(observation) # the real work code !!!!!
+      else : action = Directions.STOP
       self.unmute()
 
       # Execute the action
@@ -814,14 +815,11 @@ class Game:
       # Check FramesUntilEnd
       if agentIndex == numAgents-1:
         self.state.minusOneFrame()
-
-      for counter,position,power,index in self.bomb:
-        if counter == self.state.data.FramesUntilEnd:
-          self.state.bombExplode(position,power)
-          self.state.getAgentState(index).recoverABomb()
-          #self.state.data._bombExplode.append((position,power))
-          #self.state.data.map.remove_object(position)
-      self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
+        for counter,position,power,index in self.bomb:
+          if counter == self.state.data.FramesUntilEnd:
+            self.state.bombExplode(position,power)
+            self.state.getAgentState(index).recoverABomb()
+        self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
       # Change the display
       self.display.update( self.state.data )
       ###idx = agentIndex - agentIndex % 2 + 1
