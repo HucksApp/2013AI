@@ -578,7 +578,6 @@ class Game:
     sys.stderr = OLD_STDERR
     
   def explode(self, counter, pos, power):
-    print 'Position: ', pos, ' Power: ', power
     breakdir = []
     for i in range(power * 4):
       if (i % 4) in breakdir:
@@ -600,33 +599,25 @@ class Game:
       agentspos = [agent.getPosition() for agent in self.state.data.agentStates]
 
       if(targetpos in self.state.data.items):
-        print 'item!'
         self.state.data._itemEaten.append(targetpos)
         self.state.data.items.remove(targetpos)
       elif(self.state.data.block[targetpos[0]][targetpos[1]] == True):
-        print 'block!'
         breakdir.append(i%4)
         self.state.data._blockBroken.append(targetpos)
         self.state.data.block[targetpos[0]][targetpos[1]] = False
         # The block will become empty or any item
       elif(self.state.data.layout.isWall(targetpos) == True):
-        print 'wall!'
         breakdir.append(i%4)
       elif(targetpos in agentspos):
-        print 'agent!'
         for agent in self.state.data.agentStates:
           if agent.getPosition() == targetpos:
             agent.configuration = agent.start
       elif(targetpos in self.state.data.bomb):
-        print 'bomb!'
-        print self.bomb
         for bomb in self.bomb:
           if bomb[1] == targetpos:
-            print bomb
-            print 'counter: ', counter
-    print 'Items: ', self.state.data.items   
-            
-      
+            newbomb = (counter-1, bomb[1], bomb[2])
+            self.bomb.remove(bomb)
+            self.bomb.append(newbomb)
 
   def run( self ):
     """
