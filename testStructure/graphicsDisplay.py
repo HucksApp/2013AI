@@ -259,7 +259,7 @@ class PacmanGraphics:
     if newState._bombExplode != None and len(newState._bombExplode) != 0:
       self.removeBomb(newState._bombExplode, self.bomb)
     if newState._blockBroken != None and len(newState._blockBroken) != 0:
-      self.removeBlock(newState._blockBroken, self.blocks)
+      self.removeBlock(newState._blockBroken, self.block)
     if newState._itemEaten  != None and len(newState._itemEaten) != 0:
       self.removeItem(newState._itemEaten, self.items)
     self.infoPane.updateScore(newState.score)

@@ -577,9 +577,12 @@ class Game:
     sys.stdout = OLD_STDOUT
     sys.stderr = OLD_STDERR
     
-  def explode(self, pos, power):
+  def explode(self, counter, pos, power):
     print 'Position: ', pos, ' Power: ', power
+    breakdir = []
     for i in range(power * 4):
+      if (i % 4) in breakdir:
+        continue
       for case in switch(i % 4):
         if case(0):
           dir = (1+(i/4), 0)
@@ -594,14 +597,35 @@ class Game:
           dir = (0, 1+(i/4))
           break
       targetpos = (pos[0] + dir[0], pos[1] + dir[1])
-      agentspos = [agent.getPosition for agent in self.state.data.agentStates]
+      agentspos = [agent.getPosition() for agent in self.state.data.agentStates]
+
       if(targetpos in self.state.data.items):
         print 'item!'
+        self.state.data._itemEaten.append(targetpos)
+        self.state.data.items.remove(targetpos)
       elif(self.state.data.block[targetpos[0]][targetpos[1]] == True):
         print 'block!'
+        breakdir.append(i%4)
+        self.state.data._blockBroken.append(targetpos)
+        self.state.data.block[targetpos[0]][targetpos[1]] = False
+        # The block will become empty or any item
       elif(self.state.data.layout.isWall(targetpos) == True):
         print 'wall!'
-      
+        breakdir.append(i%4)
+      elif(targetpos in agentspos):
+        print 'agent!'
+        for agent in self.state.data.agentStates:
+          if agent.getPosition() == targetpos:
+            agent.configuration = agent.start
+      elif(targetpos in self.state.data.bomb):
+        print 'bomb!'
+        print self.bomb
+        for bomb in self.bomb:
+          if bomb[1] == targetpos:
+            print bomb
+            print 'counter: ', counter
+    print 'Items: ', self.state.data.items   
+            
       
 
   def run( self ):
@@ -747,7 +771,7 @@ class Game:
         if counter == self.state.data.FramesUntilEnd:
           self.state.data._bombExplode.append(position)
           self.state.data.bomb.remove(position)
-          self.explode(position, power)
+          self.explode(counter, position, power)
       self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
       # Change the display
       self.display.update( self.state.data )
