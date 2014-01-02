@@ -119,7 +119,7 @@ class GameState:
     return self.data._lose
 
   def isWin( self ):
-    return self.data._win
+    return ( self.getNumAgents()!=1 and self.data._eaten.count(False) is 1 ) 
 
   def getFramesUntilEnd(self ):
     return self.data.FramesUntilEnd
@@ -134,6 +134,7 @@ class GameState:
     if not self.data.map.isBomb((x_int, y_int)): return
     self.data._bombExplode.append((x_int, y_int))
     self.data.map.remove_object((x_int, y_int))
+    self.checkDie((x_int,y_int))
     for dir,vec in Actions._directionsAsList :
       if not (0,0) is vec:
         dx, dy = vec
@@ -147,8 +148,17 @@ class GameState:
         elif self.data.map.isItem((next_x,next_y)):
           self.data._itemEaten.append((next_x,next_y))
           self.data.map.remove_object((next_x,next_y))
+        else:
+          self.checkDie((next_x,next_y))
             
-	
+  def checkDie(self,position):
+    x,y = position
+    for index,agent in enumerate(self.data.agentStates):
+      sx,sy = agent.getPosition()
+      sx,sy = round(sx),round(sy)
+      if manhattanDistance(position,(sx,sy)) <= 0.5:
+        self.data._eaten[index] = True  
+  
   #############################################
   #             Helper methods:               #
   # You shouldn't need to call these directly #
@@ -484,7 +494,7 @@ def readCommand( argv ):
     args['numTraining'] = options.numTraining
     if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
   if options.numAgent > 1 :
-    from keyboardAgents import *
+    from keyboardAgents import KeyboardAgent
     args['agents'] = [KeyboardAgent(0)]
     args['agents'].extend([ agentType(i+1) for i in range(options.numAgent-1)]) # Instantiate Pacman with agentArgs
   else:
