@@ -356,7 +356,11 @@ class Map(Grid):
   def isBlocked(self, pos):
     x,y = pos
     return self[x][y] > self.BLOCK_CONST
-	
+
+  def get_data(self, pos):
+    x,y = pos
+    return self[x][y]
+   
   def remove_object(self, pos):
     x,y = pos
     if self[x][y] in self.BLOCK:
