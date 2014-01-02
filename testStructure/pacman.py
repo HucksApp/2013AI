@@ -112,15 +112,6 @@ class GameState:
   def getScore( self ):
     return self.data.score
 
-  def getBombs(self):
-    return self.data.bomb
-	
-  def getItems(self):
-    return self.data.items
-	
-  def getNumFood( self ):
-    return self.data.food.count()
-
   def hasWall(self, x, y):
     return self.data.map.isWall((x,y))
 

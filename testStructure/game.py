@@ -331,7 +331,6 @@ class Map(Grid):
           for y in range(self.height):
               if layout.walls[x][y]: self[x][y] = self.WALL
               elif layout.block[x][y]: self[x][y] = random.choice(range(21,25))
-              elif (x,y) in layout.capsules: self[x][y] = 1
               elif (x,y,1) in layout.items: self[x][y] = 1
               elif (x,y,2) in layout.items: self[x][y] = 2
               elif (x,y,3) in layout.items: self[x][y] = 3
@@ -506,8 +505,6 @@ class GameStateData:
 
   def deepCopy( self ):
     state = GameStateData( self )
-    #state.food = self.food.deepCopy()
-    #state.layout = self.layout.deepCopy()
     state.map = self.map.deepCopy()
     state._agentMoved = self._agentMoved
     state._itemDrop = self._itemDrop
@@ -532,11 +529,6 @@ class GameStateData:
     # TODO Check for type of other
     if not self.agentStates == other.agentStates: return False
     if not self.map == other.map: return False
-    #if not self.food == other.food: return False
-    #if not self.capsules == other.capsules: return False
-    #if not self.block == other.block: return False
-    #if not self.items == other.items: return False
-    #if not self.bomb == other.bomb: return False
     if not self.score == other.score: return False
     if not self.FramesUntilEnd == other.FramesUntilEnd: return False
     return True
@@ -551,7 +543,7 @@ class GameStateData:
       except TypeError, e:
         print e
         #hash(state)
-    return int((hash(tuple(self.agentStates))  + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
+    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
 
   def __str__( self ):
     width, height = self.map.width, self.map.height
