@@ -15,19 +15,19 @@ class KeyboardAgent(Agent):
   An agent controlled by the keyboard.
   """
   # NOTE: Arrow keys also work.
-  WEST_KEY  = 'a' 
-  EAST_KEY  = 'd' 
-  NORTH_KEY = 'w' 
+  WEST_KEY  = 'a'
+  EAST_KEY  = 'd'
+  NORTH_KEY = 'w'
   SOUTH_KEY = 's'
   STOP_KEY = 'q'
   LAY_KEY = 'z'
 
   def __init__( self, index = 0 ):
-    
+
     self.lastMove = Directions.STOP
     self.index = index
     self.keys = []
-    
+
   def getAction( self, state):
     from graphicsUtils import keys_waiting
     from graphicsUtils import keys_pressed
@@ -41,12 +41,12 @@ class KeyboardAgent(Agent):
       # Try to move in the same direction as before
       #if self.lastMove in legal:
         #move = self.lastMove
-    
+
     if (self.STOP_KEY in self.keys) and Directions.STOP in legal: move = Directions.STOP
     elif (self.LAY_KEY in self.keys) and 'Lay' in legal: move = 'Lay'
     if move not in legal:
       move = random.choice(legal)
-      
+
     self.lastMove = move
 
     return move
@@ -58,15 +58,15 @@ class KeyboardAgent(Agent):
     if   (self.NORTH_KEY in self.keys or 'Up' in self.keys) and Directions.NORTH in legal:   move = Directions.NORTH
     if   (self.SOUTH_KEY in self.keys or 'Down' in self.keys) and Directions.SOUTH in legal: move = Directions.SOUTH
     return move
-  
+
 class KeyboardAgent2(KeyboardAgent):
   """
   A second agent controlled by the keyboard.
   """
   # NOTE: Arrow keys also work.
-  WEST_KEY  = 'j' 
-  EAST_KEY  = "l" 
-  NORTH_KEY = 'i' 
+  WEST_KEY  = 'j'
+  EAST_KEY  = "l"
+  NORTH_KEY = 'i'
   SOUTH_KEY = 'k'
   STOP_KEY = 'u'
   LAY_KEY = 'n'
@@ -78,5 +78,4 @@ class KeyboardAgent2(KeyboardAgent):
     if   (self.NORTH_KEY in self.keys) and Directions.NORTH in legal:   move = Directions.NORTH
     if   (self.SOUTH_KEY in self.keys) and Directions.SOUTH in legal: move = Directions.SOUTH
     return move
-  
-  
+

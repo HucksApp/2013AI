@@ -353,8 +353,8 @@ class PacmanGraphics:
       for image in fireImage.values():
         remove_from_screen(image)
       refresh()
-      
-	
+
+
   def getPosition(self, agentState):
     if agentState.configuration == None: return (-1000, -1000)
     return agentState.getPosition()
@@ -392,7 +392,7 @@ class PacmanGraphics:
           pos = (xNum, yNum)
           screen = self.to_screen(pos)
 
-          square( screen ,0.5 * self.gridSize,color = wallColor, filled = 1, behind=2)		  		  
+          square( screen ,0.5 * self.gridSize,color = wallColor, filled = 1, behind=2)
 
   """def isWall(self, x, y, walls):
     if x < 0 or y < 0:
@@ -448,7 +448,7 @@ class PacmanGraphics:
           dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
           bombImages[(x,y)] = dot
     return bombImages
-	
+
   def removeGridImage(self, cells, GridImages ):
     for cell in cells:
       x, y = cell
@@ -457,7 +457,7 @@ class PacmanGraphics:
   def removeDictImage(self, cells, Images ):
     for cell in cells:
       x, y = cell
-      remove_from_screen(Images[(x,y)])	  
+      remove_from_screen(Images[(x,y)])
 
   def addBomb(self, cells, bombImages ):
     for cell in cells:
@@ -488,8 +488,8 @@ class PacmanGraphics:
                         outlineColor = FIRE_LINE_COLOR,
                         fillColor = FIRE_FILL_COLOR,
                         width = 0.5)
-      fireImages[cell] = dot	  
-	
+      fireImages[cell] = dot
+
   def drawExpandedCells(self, cells):
     """
     Draws an overlay of expanded grid positions for search agents
@@ -604,3 +604,4 @@ def saveFrame():
   name = os.path.join(POSTSCRIPT_OUTPUT_DIR, 'frame_%08d.ps' % FRAME_NUMBER)
   FRAME_NUMBER += 1
   writePostscript(name) # writes the current canvas
+

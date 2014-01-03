@@ -17,7 +17,7 @@ class Layout:
   """
   A Layout manages the static information about the game board.
   """
-  
+
   def __init__(self, layoutText):
     self.width = len(layoutText[0])
     self.height= len(layoutText)
@@ -30,10 +30,10 @@ class Layout:
     self.processLayoutText(layoutText)
     self.layoutText = layoutText
     # self.initializeVisibilityMatrix()
-    
+
   def getNumAgents(self):
     return self.numAgents
-    
+
   def initializeVisibilityMatrix(self):
     global VISIBILITY_MATRIX_CACHE
     if reduce(str.__add__, self.layoutText) not in VISIBILITY_MATRIX_CACHE:
@@ -50,15 +50,15 @@ class Layout:
               while (nextx + nexty) != int(nextx) + int(nexty) or not self.walls[int(nextx)][int(nexty)] :
                 vis[x][y][direction].add((nextx, nexty))
                 nextx, nexty = x + dx, y + dy
-      self.visibility = vis      
+      self.visibility = vis
       VISIBILITY_MATRIX_CACHE[reduce(str.__add__, self.layoutText)] = vis
     else:
       self.visibility = VISIBILITY_MATRIX_CACHE[reduce(str.__add__, self.layoutText)]
-      
+
   def isWall(self, pos):
     x, col = pos
     return self.walls[x][col]
-  
+
   def getRandomLegalPosition(self):
     x = random.choice(range(self.width))
     y = random.choice(range(self.height))
@@ -75,42 +75,42 @@ class Layout:
     poses = [(1,1), (1, self.height - 2), (self.width - 2, 1), (self.width - 2, self.height - 2)]
     dist, pos = max([(manhattanDistance(p, pacPos), p) for p in poses])
     return pos
-  
+
   def isVisibleFrom(self, ghostPos, pacPos, pacDirection):
     row, col = [int(x) for x in pacPos]
     return ghostPos in self.visibility[row][col][pacDirection]
-  
+
   def __str__(self):
     return "\n".join(self.layoutText)
-    
+
   def deepCopy(self):
     return Layout(self.layoutText[:])
-    
+
   def processLayoutText(self, layoutText):
     """
     Coordinates are flipped from the input format to the (x,y) convention here
-    
-    The shape of the maze.  Each character  
-    represents a different type of object.   
-     % - Wall                               
+
+    The shape of the maze.  Each character
+    represents a different type of object.
+     % - Wall
      P,1,2,3,4 - Agent
-	 A - Item add Power
-	 S - Item add Speed
-	 N - Item add Bomb_Number
-	 B - Block
-	 b - bomb
+     A - Item add Power
+     S - Item add Speed
+     N - Item add Bomb_Number
+     B - Block
+     b - bomb
     Other characters are ignored.
     """
     maxY = self.height - 1
-    for y in range(self.height):       
+    for y in range(self.height):
       for x in range(self.width):
-        layoutChar = layoutText[maxY - y][x]  
+        layoutChar = layoutText[maxY - y][x]
         self.processLayoutChar(x, y, layoutChar)
     self.agentPositions.sort()
     self.agentPositions = [ ( i == 0, pos) for i, pos in self.agentPositions]
-  
+
   def processLayoutChar(self, x, y, layoutChar):
-    if layoutChar == '%':      
+    if layoutChar == '%':
       self.walls[x][y] = True
     elif layoutChar == 'A':
       self.items.append((x,y,1))
@@ -124,7 +124,7 @@ class Layout:
       self.block[x][y] = True
     elif layoutChar in  ['P','1', '2', '3', '4']:
       self.agentPositions.append( (self.numAgents, (x,y)))
-      self.numAgents += 1 
+      self.numAgents += 1
 def getLayout(name, back = 2):
   if name.endswith('.lay'):
     layout = tryToLoad('layouts/' + name)
@@ -144,3 +144,4 @@ def tryToLoad(fullname):
   f = open(fullname)
   try: return Layout([line.strip() for line in f])
   finally: f.close()
+

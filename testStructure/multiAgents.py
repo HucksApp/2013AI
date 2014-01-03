@@ -67,7 +67,7 @@ class ReflexAgent(Agent):
     newGhostStates = successorGameState.getGhostStates()
     newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-    "*** YOUR CODE HERE ***" 
+    "*** YOUR CODE HERE ***"
     score = successorGameState.getScore()
     for ghost in newGhostStates:
         if ghost.scaredTimer <= 0:
@@ -87,14 +87,14 @@ class ReflexAgent(Agent):
     foods = oldFood.asList(True)
     for pos in foods:
         d = manhattanDistance(newPos,pos)
-        if d < min:		
+        if d < min:
             min = d
     if min > 0.5:
         if len(foods) > 5:
             score -= min*2
         else:
             score -= min*5
-		
+
     return score
 
 def scoreEvaluationFunction(currentGameState):
@@ -131,19 +131,19 @@ class MultiAgentSearchAgent(Agent):
 def getMinSuccessor(gameState,N_ghost,iter):
   legal = gameState.getLegalActions(1)
   if len(legal) <= iter%4:
-	return None	
+    return None
   successor = gameState.generateSuccessor(1,legal[iter%4])
   if N_ghost>1:
-	for ghost in range(2,N_ghost+1):
-		if successor.isLose():
-			return successor
-		legal = successor.getLegalActions(ghost)
-		if len(legal) <= iter/(4**(ghost-1))%4:
-			return None
-		successor = successor.generateSuccessor(ghost,legal[iter/(4**(ghost-1))%4])
+    for ghost in range(2,N_ghost+1):
+        if successor.isLose():
+            return successor
+        legal = successor.getLegalActions(ghost)
+        if len(legal) <= iter/(4**(ghost-1))%4:
+            return None
+        successor = successor.generateSuccessor(ghost,legal[iter/(4**(ghost-1))%4])
   return successor
 
-	
+
 class MinimaxAgent(MultiAgentSearchAgent):
   """
     Your minimax agent (question 2)
@@ -203,7 +203,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     self.cnt = 0
     score, action = self.miniMax(gameState,self.depth,1)
     return action
-    
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
   """
@@ -225,7 +225,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 alpha = score
                 if alpha >= beta:
                     break
-                
+
         if depth == self.depth:
             return alpha,bestAction
         else:
@@ -243,7 +243,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                         break
 
         return beta
-		
+
   def getAction(self, gameState):
     """
       Returns the minimax action using self.depth and self.evaluationFunction
@@ -257,7 +257,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
   """
     Your expectimax agent (question 4)
   """
-	
+
   def ExpectminiMax(self,gameState, depth, Maxplayer):
     if depth == 0 or gameState.isWin() or gameState.isLose():
         return self.evaluationFunction(gameState)
@@ -289,7 +289,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                 bestScore = bestScore + score
         bestScore = bestScore/ave
         return bestScore
-		
+
   def getAction(self, gameState):
     """
       Returns the expectimax action using self.depth and self.evaluationFunction
@@ -304,34 +304,34 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
 def disCmp(x,y,newPos):
   if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))<0: return -1
-  else: 
+  else:
       if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))>0: return 1
       else:
-          return 0	
-	
+          return 0
+
 def actualDistance(gameState, target):
   from game import Directions
   from game import Actions
-  
+
   walls = gameState.getWalls()
   start = gameState.getPacmanPosition()
   closedSet = []
   openSet = [[(start,0),0]]
-  
+
   g_score = {start:0}
   f_score = {start:(g_score[start]+util.manhattanDistance(start,target))}
   while len(openSet):
     openSet.sort(key=lambda x:x[1])
     cur_node = openSet[0]
     if util.manhattanDistance(cur_node[0][0],target) < 0.8:
-        return cur_node[0][1] 
-	
+        return cur_node[0][1]
+
     openSet.pop(0)
     closedSet.append(cur_node)
     for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
         x,y = cur_node[0][0]
         dx,dy = Actions.directionToVector(action)
-        if not walls[int(x+dx)][int(y+dy)]:    
+        if not walls[int(x+dx)][int(y+dy)]:
             node = ((int(x+dx),int(y+dy)),cur_node[0][1]+1)
             tentative_g = g_score[cur_node[0][0]]+1
             tentative_f = tentative_g + util.manhattanDistance(node[0],target)
@@ -342,8 +342,8 @@ def actualDistance(gameState, target):
                 f_score.update({node[0]:tentative_f})
                 if node[0] not in [x[0][0] for x in openSet]:
                     openSet.append([node,tentative_f])
-  return None	
-	
+  return None
+
 def betterEvaluationFunction(currentGameState):
   """
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
@@ -353,39 +353,39 @@ def betterEvaluationFunction(currentGameState):
   """
   "*** YOUR CODE HERE ***"
   if currentGameState.isLose():
-	  return -1e307
-  if currentGameState.isWin() : 
-	  return 1e307         
+      return -1e307
+  if currentGameState.isWin() :
+      return 1e307
   returnScore= 0.0
   newPos = currentGameState.getPacmanPosition()
-  
+
   # Obtain all ghost positions on the board
   GhostStates = currentGameState.getGhostStates()
   GhostStates.sort(lambda x,y: disCmp(x.getPosition(),y.getPosition(),newPos))
   GhostPositions = [Ghost.getPosition() for Ghost in GhostStates]
-  
+
   # Obtain scared Ghosts informations
   newScaredTimes = [ghostState.scaredTimer for ghostState in GhostStates]
   closestGhost=GhostStates[0]
-  
+
   # Sort the food list and find the closest food to Pacman
   FoodList = currentGameState.getFood().asList()
   minPos = FoodList[0]
   minDist = util.manhattanDistance(minPos, newPos)
   for food in FoodList:
       curDist = util.manhattanDistance(food, newPos)
-      if curDist==1 : 
+      if curDist==1 :
           minPos=food
           minDist=curDist
           break
       if (curDist < minDist):
           minDist = curDist
-          minPos = food  
-		 
+          minPos = food
+
   # Find the actual distance to the estimated nearest food
   closestFoodDistance = actualDistance(currentGameState, minPos)
-  
-  # Find the actual distance to the closest Scared Ghost and the closest Normal Ghost 
+
+  # Find the actual distance to the closest Scared Ghost and the closest Normal Ghost
   closestScaredGhostDist=1e307
   closestScaredGhost=None
   closestNormalGhostDist=1e307
@@ -405,10 +405,10 @@ def betterEvaluationFunction(currentGameState):
   if len(allDistNormalGhosts)!=0:
       closestNormalGhostDist=min(allDistNormalGhosts)
       closestNormalGhost=allNormalGhost[allDistNormalGhosts.index(closestNormalGhostDist)]
-  
+
   # Default weights for food, normalghost, scaredghost
   wFood, wGhost, wScaredGhost       = [2.0, -6.0, 5.0];
-  
+
   # if the closest ghost ate Pacman
   if (closestNormalGhostDist==0):
       return -1e307
@@ -421,27 +421,27 @@ def betterEvaluationFunction(currentGameState):
           if (closestScaredGhostDist<closestScaredGhost.scaredTimer):
               if(closestScaredGhostDist<7):
                   wFood, wGhost, wScaredGhost= [0.0, -0.0,10.0];
-    	      else:
-    	          if(closestScaredGhostDist<12):
-    		          wFood, wGhost, wScaredGhost= [3.0, 0.0, 9.0]; 
-    	          else :
-    		          wFood, wGhost, wScaredGhost= [3.0, 0.0, 2.0];    
+              else:
+                  if(closestScaredGhostDist<12):
+                      wFood, wGhost, wScaredGhost= [3.0, 0.0, 9.0];
+                  else :
+                      wFood, wGhost, wScaredGhost= [3.0, 0.0, 2.0];
           else:
-    	      wFood, wGhost, wScaredGhost = [4.0, -0.0, 1.0];
+              wFood, wGhost, wScaredGhost = [4.0, -0.0, 1.0];
       else :
-          wFood, wGhost, wScaredGhost = [4.0, -0.0, 0.0];     
+          wFood, wGhost, wScaredGhost = [4.0, -0.0, 0.0];
   else:
       if (closestScaredGhostDist<5):
           if (closestScaredGhost.scaredTimer>5):
               wFood, wGhost, wScaredGhost= [1.0, -6.0, 4.0];
           else:
-              wFood, wGhost, wScaredGhost= [1.0, -6.0, 1.5]; 
+              wFood, wGhost, wScaredGhost= [1.0, -6.0, 1.5];
       else:
           wFood, wGhost, wScaredGhost= [1.0, -6.0, 1.0];
 
   """if len(FoodList) < 3   :
       wFood, wGhost, wScaredGhost= [6.0, -8.0, 5.0];
-  else: 
+  else:
      if len(FoodList) < 2:
          wFood, wGhost, wScaredGhost= [8.0, -8.0, 5.0];"""
   #print 'FoodDistance:',closestFoodDistance,'  closestNormalGhostDist:',closestNormalGhostDist,' closestScaredGhostDist:',closestScaredGhostDist
@@ -451,5 +451,4 @@ def betterEvaluationFunction(currentGameState):
 
 # Abbreviation
 better = betterEvaluationFunction
-
 

@@ -11,3 +11,4 @@ photo = Tkinter.PhotoImage(file = './Idle3.gif')
 canvas.create_image(20,20, image=photo)
 
 root.mainloop()
+

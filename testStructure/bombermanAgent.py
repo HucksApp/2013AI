@@ -11,11 +11,11 @@ class BombermanAgent( Agent ):
 
   def getAction( self, state ):
     dist = self.getDistribution(state)
-    if len(dist) == 0: 
+    if len(dist) == 0:
       return Directions.STOP
     else:
       return util.chooseFromDistribution( dist )
-    
+
   def getDistribution(self, state):
     "Returns a Counter encoding a distribution over actions from the provided state."
     util.raiseNotDefined()
@@ -27,3 +27,4 @@ class RandomBomberman( BombermanAgent ):
     for a in state.getLegalActions( self.index ): dist[a] = 1.0
     dist.normalize()
     return dist
+
