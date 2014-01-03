@@ -257,9 +257,11 @@ class ClassicGameRules:
   and how the game starts and ends.
   """
   
-  def __init__(self, timeout=30):
+  def __init__(self, timeout=30, life = 5):
+    global BOMBERMAN_LIFE
     self.timeout = timeout
-    self.BOMBERMAN_LIFE = BOMBERMAN_LIFE
+    self.BOMBERMAN_LIFE = life
+    BOMBERMAN_LIFE = life
 
   def newGame( self, layout, Agents, display, quiet = False, catchExceptions=False):
     agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
@@ -440,9 +442,12 @@ def readCommand( argv ):
                     help='Turns on exception handling and timeouts during games', default=False)
   parser.add_option('--timeout', dest='timeout', type='int',
                     help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
+					
   parser.add_option('-m', dest='manual', type='int',
                     help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
 					
+  parser.add_option('--life', dest='life', type='int',
+                    help=default('The life number of an agent'), default=5)	
 					
   options, otherjunk = parser.parse_args(argv)
   if len(otherjunk) != 0:
@@ -508,6 +513,11 @@ def readCommand( argv ):
     replayGame(**recorded)
     sys.exit(0)
 
+  if options.life > 0:
+    args['life'] = options.life
+  else:
+    args['life'] = 5
+	
   return args
 
 def loadAgent(agent, nographics):
@@ -551,11 +561,11 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, agents, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames( layout, agents, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 , life = 5 ):
   import __main__
   __main__.__dict__['_display'] = display
 
-  rules = ClassicGameRules(timeout)
+  rules = ClassicGameRules(timeout,life)
   games = []
 
   for i in range( numGames ):
