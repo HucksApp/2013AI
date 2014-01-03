@@ -177,17 +177,13 @@ class AgentState:
     return self.Bomb_Left_Number > 0
 	
   def applyItemEffect(self, type):
-    print 'applyItem ',type,' to agent:'
     if type is 1 and ( self.Bomb_Power+1 < len(self.POWER_TABLE) ): # Power up
         self.Bomb_Power = self.Bomb_Power + 1 
-        print 'Power up:',self.POWER_TABLE[self.Bomb_Power]
     elif type is 2 and ( self.speed+1 < len(self.SPEED_TABLE) ): # Speed up
         self.speed = self.speed +1 
-        print 'Speed up:',self.SPEED_TABLE[self.speed]
     elif type is 3 and ( self.Bomb_Total_Number < self.BOMB_NUMBER_LIMITATION): # Number up
         self.Bomb_Total_Number = self.Bomb_Total_Number + 1 
         self.Bomb_Left_Number = self.Bomb_Left_Number + 1
-        print 'Number up:',self.Bomb_Left_Number
 	
   def isActive(self):
     return self.FramesUntilNextAction == 0
@@ -356,6 +352,13 @@ class Map(Grid):
     x,y = pos
     return self[x][y] > self.BLOCK_CONST
 
+  def isEmpty(self, pos):
+    x,y = pos
+    return self[x][y] is self.EMPTY
+
+  def getNumBombs(self):
+    return sum([x.count(self.BOMB) for x in self])     
+	
   def get_data(self, pos):
     x,y = pos
     return self[x][y]
@@ -488,7 +491,6 @@ class GameStateData:
     """
     if prevState != None:
       self.agentStates = self.copyAgentStates( prevState.agentStates )
-      #self.layout = prevState.layout
       self.map = prevState.map
       self._eaten = prevState._eaten
       self.score = prevState.score
@@ -810,16 +812,16 @@ class Game:
       else:
         self.state = self.state.generateSuccessor( agentIndex, action )
       # If the action is Lay a bomb
-      if action is 'Lay':
-        self.bomb.append((self.state.getFramesUntilEnd() - self.rules.BOMB_DURATION, self.state.getAgentPosition(agentIndex), self.state.getAgentState(agentIndex).getBombPower(),agentIndex))
+      if action is Actions.LAY:
+        self.bomb.append((self.state.getFramesUntilEnd() - self.rules.BOMB_DURATION, nearestPoint(self.state.getAgentPosition(agentIndex)), self.state.getAgentState(agentIndex).getBombPower(),agentIndex))
       # Check FramesUntilEnd
       if agentIndex == numAgents-1:
         self.state.minusOneFrame()
         for counter,position,power,index in self.bomb:
           if counter == self.state.data.FramesUntilEnd:
-            self.state.bombExplode(position,power)
+            self.state.bombExplode(self.bomb,position,power)
             self.state.getAgentState(index).recoverABomb()
-        self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
+        self.bomb = [b for b in self.bomb if (b[0] != self.state.data.FramesUntilEnd)]
       # Change the display
       self.display.update( self.state.data )
       ###idx = agentIndex - agentIndex % 2 + 1

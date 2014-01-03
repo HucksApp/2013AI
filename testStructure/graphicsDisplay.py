@@ -9,7 +9,7 @@
 from graphicsUtils import *
 import math, time
 from game import Directions
-
+from util import *
 ###########################
 #  GRAPHICS DISPLAY CODE  #
 ###########################
@@ -245,10 +245,11 @@ class PacmanGraphics:
       self.removeBomb(newState._bombExplode, self.bomb)
     if newState._blockBroken != None and len(newState._blockBroken) != 0:
       self.removeBlock(newState._blockBroken, self.block)
-    if newState._itemEaten  != None and len(newState._itemEaten) != 0:
-      self.removeItem(newState._itemEaten, self.items)
     if newState._itemDrop  != None and len(newState._itemDrop) != 0:
       self.addItem(newState._itemDrop, self.items)
+    if newState._itemEaten  != None and len(newState._itemEaten) != 0:
+      self.removeItem(newState._itemEaten, self.items)
+
     self.infoPane.updateScore(newState.score)
     if 'ghostDistances' in dir(newState):
       self.infoPane.updateGhostDistances(newState.ghostDistances)

@@ -103,7 +103,7 @@ class GameState:
 
   def getAgentPosition( self, agentIndex ):
     return self.data.agentStates[agentIndex].getPosition()
-
+	
   def getAgentState(self, agentIndex):
     return 	self.data.agentStates[agentIndex]
 	
@@ -129,28 +129,46 @@ class GameState:
     self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
     return self.data.FramesUntilEnd
 
-  def bombExplode(self, position, power):
-    x,y = position
-    x_int, y_int = int(x), int(y)
-    if not self.data.map.isBomb((x_int, y_int)): return
-    self.data._bombExplode.append((x_int, y_int))
-    self.data.map.remove_object((x_int, y_int))
-    self.checkDie((x_int,y_int))
+  def bombExplode(self,bombs, position, power):
+    x_int, y_int = position
+    if not self.data.map.isBomb(position): return
+    self.data._bombExplode.append(position)
+    self.data.map.remove_object(position)
+    self.checkDie(position)
+    
     for dir,vec in Actions._directionsAsList :
+      isbreak = False
+      i = 0
       if not (0,0) is vec:
         dx, dy = vec
-        next_y = y_int + dy
-        next_x = x_int + dx
-        if self.data.map.isBlock((next_x,next_y)):
-          self.data._blockBroken.append((next_x,next_y))
-          res = self.data.map.remove_object((next_x,next_y))
-          if res != None:
-            self.data._itemDrop.append((next_x,next_y,res))
-        elif self.data.map.isItem((next_x,next_y)):
-          self.data._itemEaten.append((next_x,next_y))
-          self.data.map.remove_object((next_x,next_y))
-        else:
-          self.checkDie((next_x,next_y))
+        next_y, next_x = y_int,x_int
+        while not isbreak and i < power:
+            i=i+1
+            next_y = next_y + dy
+            next_x = next_x + dx
+            pos = (next_x,next_y)
+            if self.data.map.isEmpty(pos):
+              self.checkDie(pos)
+            elif self.data.map.isBlock(pos):
+              isbreak = True
+              self.data._blockBroken.append(pos)
+              res = self.data.map.remove_object(pos)
+              if res != None:
+                self.data._itemDrop.append((next_x,next_y,res))
+            elif self.data.map.isWall(pos):
+              isbreak = True
+            elif self.data.map.isItem(pos):
+              self.data._itemEaten.append(pos)
+              self.data.map.remove_object(pos)
+              self.checkDie(pos)
+            elif self.data.map.isBomb(pos):
+              self.checkDie(pos)
+              bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-1) ]
+              if len(bombSweep) is 1:
+                bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-1,)+bombSweep[0][1][1:]
+                #bombs.remove(bombSweep[0])
+                #bombs.append((self.data.FramesUntilEnd-2,)+bombSweep[0][1:])
+                
             
   def checkDie(self,position):
     x,y = position
@@ -158,7 +176,8 @@ class GameState:
       sx,sy = agent.getPosition()
       sx,sy = round(sx),round(sy)
       if manhattanDistance(position,(sx,sy)) <= 0.5:
-        self.data._eaten[index] = True  
+        #self.data._eaten[index] = True 
+        agent.configuration = agent.start		
   
   #############################################
   #             Helper methods:               #
@@ -239,7 +258,8 @@ class ClassicGameRules:
     """
     if state.isWin(): self.win(state, game)
     if state.isLose(): self.lose(state, game)
-    if state.getFramesUntilEnd() == 0: game.gameOver = True
+    if state.getFramesUntilEnd() < 0: game.gameOver = True
+
 
   def win( self, state, game ):
     if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
@@ -328,82 +348,6 @@ class BombermanRules:
       state.data.map.remove_object(position)
       state.data._itemEaten.append(position)
   consume = staticmethod( consume )
-
-class GhostRules:
-  """
-  These functions dictate how ghosts interact with their environment.
-  """
-  GHOST_SPEED=1.0
-  def getLegalActions( state, ghostIndex ):
-    """
-    Ghosts cannot stop, and cannot turn around unless they
-    reach a dead end, but can turn 90 degrees at intersections.
-    """
-    conf = state.getGhostState( ghostIndex ).configuration
-    possibleActions = Actions.getPossibleActions( conf, state.data.map )
-    reverse = Actions.reverseDirection( conf.direction )
-    if Directions.STOP in possibleActions:
-      possibleActions.remove( Directions.STOP )
-    if reverse in possibleActions and len( possibleActions ) > 1:
-      possibleActions.remove( reverse )
-    return possibleActions
-  getLegalActions = staticmethod( getLegalActions )
-
-  def applyAction( state, action, ghostIndex):
-
-    legal = GhostRules.getLegalActions( state, ghostIndex )
-    if action not in legal:
-      raise Exception("Illegal ghost action " + str(action))
-
-    ghostState = state.data.agentStates[ghostIndex]
-    speed = GhostRules.GHOST_SPEED
-    if ghostState.scaredTimer > 0: speed /= 2.0
-    vector = Actions.directionToVector( action, speed )
-    ghostState.configuration = ghostState.configuration.generateSuccessor( vector )
-  applyAction = staticmethod( applyAction )
-
-  def decrementTimer( ghostState):
-    timer = ghostState.scaredTimer
-    if timer == 1:
-      ghostState.configuration.pos = nearestPoint( ghostState.configuration.pos )
-    ghostState.scaredTimer = max( 0, timer - 1 )
-  decrementTimer = staticmethod( decrementTimer )
-
-  def checkDeath( state, agentIndex):
-    pacmanPosition = state.getPacmanPosition()
-    if agentIndex == 0: # Pacman just moved; Anyone can kill him
-      for index in range( 1, len( state.data.agentStates ) ):
-        ghostState = state.data.agentStates[index]
-        ghostPosition = ghostState.configuration.getPosition()
-        if GhostRules.canKill( pacmanPosition, ghostPosition ):
-          GhostRules.collide( state, ghostState, index )
-    else:
-      ghostState = state.data.agentStates[agentIndex]
-      ghostPosition = ghostState.configuration.getPosition()
-      if GhostRules.canKill( pacmanPosition, ghostPosition ):
-        GhostRules.collide( state, ghostState, agentIndex )
-  checkDeath = staticmethod( checkDeath )
-
-  def collide( state, ghostState, agentIndex):
-    if ghostState.scaredTimer > 0:
-      state.data.scoreChange += 200
-      GhostRules.placeGhost(state, ghostState)
-      ghostState.scaredTimer = 0
-      # Added for first-person
-      state.data._eaten[agentIndex] = True
-    else:
-      if not state.data._win:
-        state.data.scoreChange -= 500
-        state.data._lose = True
-  collide = staticmethod( collide )
-
-  def canKill( pacmanPosition, ghostPosition ):
-    return manhattanDistance( ghostPosition, pacmanPosition ) <= COLLISION_TOLERANCE
-  canKill = staticmethod( canKill )
-
-  def placeGhost(state, ghostState):
-    ghostState.configuration = ghostState.start
-  placeGhost = staticmethod( placeGhost )
 
 #############################
 # FRAMEWORK TO START A GAME #
@@ -499,10 +443,8 @@ def readCommand( argv ):
     if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
   if options.numAgent > 1 and options.manual >= 0 :
     from keyboardAgents import KeyboardAgent
-    args['agents'] = []
-    args['agents'].extend([agentType(i) for i in range(options.manual)])
-    args['agents'].append(KeyboardAgent(options.manual))
-    args['agents'].extend([ agentType(i+1) for i in range(options.manual+1,options.numAgent-1)]) # Instantiate Pacman with agentArgs
+    args['agents'] = [ agentType(i) for i in range(0,options.manual)] + [ agentType(i) for i in range(options.manual+1,options.numAgent)]
+    args['agents'].insert(options.manual, KeyboardAgent(options.manual))
   elif options.numAgent > 1:
     args['agents'] =[ agentType(i) for i in range(options.numAgent)] # Instantiate Pacman with agentArgs
   else:
