@@ -417,11 +417,12 @@ class PacmanGraphics:
       for y in range(bombMatrix.height):
         if bombMatrix.isBomb((x,y)): # There's a bomb here
           screen_x, screen_y = self.to_screen((x,y))
-          dot = circle( (screen_x, screen_y),
+          """dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
-                        width = 1)
+                        width = 1)"""
+          dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
           bombImages[(x,y)] = dot
     return bombImages
 	
@@ -443,12 +444,12 @@ class PacmanGraphics:
   def addBomb(self, cells, bombImages ):
     for cell in cells:
       ( screen_x, screen_y ) = self.to_screen(cell)
-      dot = circle( (screen_x, screen_y),
+      """dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
-                        width = 1)
-      #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
+                        width = 1)"""
+      dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
       bombImages[cell] = dot
 
   def addItem(self, cells, itemsImages ):

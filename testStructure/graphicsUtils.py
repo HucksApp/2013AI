@@ -27,6 +27,7 @@ _canvas_tsize = 12
 _canvas_tserifs = 0
 _box = None
 _bomb = None
+_explode = None
 _bomberman = []
 
 def formatColor(r, g, b):
