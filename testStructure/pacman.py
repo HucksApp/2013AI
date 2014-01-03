@@ -149,8 +149,9 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    self.checkDie(position)
-    self.data._fire.append(position)
+    if not position in self.data._fire:
+      self.checkDie(position)
+      self.data._fire.append(position)
     for vec in [ v for dir, v in Actions._directionsAsList if ( dir != Actions.LAY and dir != Directions.STOP)]:
       isbreak = False
       i = 0
@@ -182,9 +183,9 @@ class GameState:
           elif self.data.map.isBomb(pos):
             self.checkDie(pos)
             self.data._fire.append(pos)
-            bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-1) ]
+            bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-int(BOMB_DURATION/10)) ]
             if len(bombSweep) is 1:
-              bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-1,)+bombSweep[0][1][1:]
+              bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-int(BOMB_DURATION/10),)+bombSweep[0][1][1:]
                 
             
   def checkDie(self,position):
