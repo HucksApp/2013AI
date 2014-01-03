@@ -80,6 +80,11 @@ ITEM_SIZE = 0.4
 BOMB_COLOR = formatColor(1,0,0)
 BOMB_SIZE = 0.4
 
+# Fire graphics
+# Item graphics
+FIRE_LINE_COLOR = formatColor(0.7,0.3,0)
+FIRE_FILL_COLOR = formatColor(0.95,0,0)
+FIRE_SIZE = 0.2
 
 # Drawing walls
 WALL_RADIUS = 0.15
@@ -239,16 +244,18 @@ class PacmanGraphics:
       #self.moveGhost(agentState, agentIndex, prevState, prevImage)
     self.agentImages[agentIndex] = (agentState, prevImage)
 
-    if newState._bombLaid != None and len(newState._bombLaid) != 0:
+    if len(newState._bombLaid) != 0:
       self.addBomb(newState._bombLaid,self.bomb)
-    if newState._bombExplode != None and len(newState._bombExplode) != 0:
-      self.removeBomb(newState._bombExplode, self.bomb)
-    if newState._blockBroken != None and len(newState._blockBroken) != 0:
-      self.removeBlock(newState._blockBroken, self.block)
-    if newState._itemDrop  != None and len(newState._itemDrop) != 0:
+    if len(newState._fire) != 0:
+      self.animateExplode(newState._fire)
+    if len(newState._bombExplode) != 0:
+      self.removeDictImage(newState._bombExplode, self.bomb)
+    if len(newState._blockBroken) != 0:
+      self.removeGridImage(newState._blockBroken, self.block)
+    if len(newState._itemDrop) != 0:
       self.addItem(newState._itemDrop, self.items)
-    if newState._itemEaten  != None and len(newState._itemEaten) != 0:
-      self.removeItem(newState._itemEaten, self.items)
+    if len(newState._itemEaten) != 0:
+      self.removeDictImage(newState._itemEaten, self.items)
 
     self.infoPane.updateScore(newState.score)
     if 'ghostDistances' in dir(newState):
@@ -321,7 +328,7 @@ class PacmanGraphics:
       start = time.time()
       fx, fy = self.getPosition(prevPacman)
       px, py = self.getPosition(agent)
-      frames = 4.0
+      frames = 6.0
       for i in range(1,int(frames) + 1):
         pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
         self.moveAgent(pos, self.getDirection(agent), image , i , agentIndex)
@@ -331,7 +338,23 @@ class PacmanGraphics:
       self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
     refresh()
 
-
+  def animateExplode(self, positions ):
+    if self.frameTime < 0:
+      print 'Press any key to step forward, "q" to play'
+      keys = wait_for_keys()
+      if 'q' in keys:
+        self.frameTime = 0.1
+    if self.frameTime > 0.01 or self.frameTime < 0:
+      start = time.time()
+      fireImage = {}
+      self.addFire(positions,fireImage)
+      refresh()
+      sleep(abs(self.frameTime))
+      for image in fireImage.values():
+        remove_from_screen(image)
+      refresh()
+      
+	
   def getPosition(self, agentState):
     if agentState.configuration == None: return (-1000, -1000)
     return agentState.getPosition()
@@ -426,20 +449,15 @@ class PacmanGraphics:
           bombImages[(x,y)] = dot
     return bombImages
 	
-  def removeBlock(self, cells, blockImages ):
+  def removeGridImage(self, cells, GridImages ):
     for cell in cells:
       x, y = cell
-      remove_from_screen(blockImages[x][y])
-	  
-  def removeItem(self, cells, itemImages ):
-    for cell in cells:
-      x, y = cell
-      remove_from_screen(itemImages[(x, y)])
+      remove_from_screen(GridImages[x][y])
 
-  def removeBomb(self, cells, bombImages ):
+  def removeDictImage(self, cells, Images ):
     for cell in cells:
       x, y = cell
-      remove_from_screen(bombImages[(x, y)])
+      remove_from_screen(Images[(x,y)])	  
 
   def addBomb(self, cells, bombImages ):
     for cell in cells:
@@ -462,6 +480,15 @@ class PacmanGraphics:
                         width = 1)
       itemsImages[(x,y)] = dot
 
+  def addFire(self, cells, fireImages ):
+    for cell in cells:
+      point = self.to_screen(cell)
+      dot = circle( point,
+                        FIRE_SIZE * self.gridSize,
+                        outlineColor = FIRE_LINE_COLOR,
+                        fillColor = FIRE_FILL_COLOR,
+                        width = 0.5)
+      fireImages[cell] = dot	  
 	
   def drawExpandedCells(self, cells):
     """

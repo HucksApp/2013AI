@@ -87,7 +87,7 @@ class GameState:
     # Let agent's logic deal with its action's effects on the board
 
     #state.data._eaten = [False for i in range(state.getNumAgents())]
-    if not state.data._eaten[agentIndex]:
+    if state.data._eaten[agentIndex] < BOMBERMAN_LIFE:
       BombermanRules.applyAction( state, action, agentIndex )
 
     if agentIndex == self.getNumAgents() - 1:
@@ -128,7 +128,7 @@ class GameState:
     return self.data._lose
 
   def isWin( self ):
-    return ( self.getNumAgents()!=1 and self.data._eaten.count(False) is 1 ) 
+    return ( self.getNumAgents()!=1 and self.data._eaten.count(BOMBERMAN_LIFE) is self.getNumAgents()-1 ) 
 
   def getFramesUntilEnd(self ):
     return self.data.FramesUntilEnd
@@ -141,7 +141,7 @@ class GameState:
     self.data._bombLaid.append(pos)
     self.data.map.add_bomb(pos)
     self.getAgentState(agentIndex).minusABomb()
-    self.data.bombs.append( (self.data.FramesUntilEnd - ClassicGameRules.BOMB_DURATION , 
+    self.data.bombs.append( (self.data.FramesUntilEnd - BOMB_DURATION , 
                              pos, self.getAgentState(agentIndex).getBombPower() , agentIndex ) )
 	
   def bombExplode(self,bombs, position, power):
@@ -150,48 +150,51 @@ class GameState:
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
     self.checkDie(position)
-    
-    for dir,vec in Actions._directionsAsList :
+    self.data._fire.append(position)
+    for vec in [ v for dir, v in Actions._directionsAsList if ( dir != Actions.LAY and dir != Directions.STOP)]:
       isbreak = False
       i = 0
-      if not (0,0) is vec:
-        dx, dy = vec
-        next_y, next_x = y_int,x_int
-        while not isbreak and i < power:
-            i=i+1
-            next_y = next_y + dy
-            next_x = next_x + dx
-            pos = (next_x,next_y)
-            if self.data.map.isEmpty(pos):
-              self.checkDie(pos)
-            elif self.data.map.isBlock(pos):
-              isbreak = True
-              self.data._blockBroken.append(pos)
-              res = self.data.map.remove_object(pos)
-              if res != None:
-                self.data._itemDrop.append((next_x,next_y,res))
-            elif self.data.map.isWall(pos):
-              isbreak = True
-            elif self.data.map.isItem(pos):
-              self.data._itemEaten.append(pos)
-              self.data.map.remove_object(pos)
-              self.checkDie(pos)
-            elif self.data.map.isBomb(pos):
-              self.checkDie(pos)
-              bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-1) ]
-              if len(bombSweep) is 1:
-                bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-1,)+bombSweep[0][1][1:]
-                #bombs.remove(bombSweep[0])
-                #bombs.append((self.data.FramesUntilEnd-2,)+bombSweep[0][1:])
+      dx, dy = vec
+      next_y, next_x = y_int,x_int
+      while not isbreak and i < power:
+          i=i+1
+          next_y = int(next_y + dy)
+          next_x = int(next_x + dx)
+          pos = (next_x,next_y)
+          if pos in self.data._fire: continue
+          if self.data.map.isEmpty(pos):
+            self.checkDie(pos)
+            self.data._fire.append(pos)
+          elif self.data.map.isBlock(pos):
+            isbreak = True
+            self.data._blockBroken.append(pos)
+            res = self.data.map.remove_object(pos)
+            self.data._fire.append(pos)
+            if res != None:
+              self.data._itemDrop.append((next_x,next_y,res))
+          elif self.data.map.isWall(pos):
+            isbreak = True
+          elif self.data.map.isItem(pos):
+            self.data._itemEaten.append(pos)
+            self.data.map.remove_object(pos)
+            self.data._fire.append(pos)
+            self.checkDie(pos)
+          elif self.data.map.isBomb(pos):
+            self.checkDie(pos)
+            self.data._fire.append(pos)
+            bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-1) ]
+            if len(bombSweep) is 1:
+              bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-1,)+bombSweep[0][1][1:]
                 
             
   def checkDie(self,position):
     x,y = position
     for index,agent in enumerate(self.data.agentStates):
+      if self.data._eaten[index] >= BOMBERMAN_LIFE: continue
       sx,sy = agent.getPosition()
       sx,sy = round(sx),round(sy)
       if manhattanDistance(position,(sx,sy)) <= 0.5:
-        #self.data._eaten[index] = True 
+        self.data._eaten[index] += 1 
         agent.configuration = agent.start		
   
   #############################################
@@ -245,15 +248,18 @@ SCARED_TIME = 40    # Moves ghosts are scared
 COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
 
+BOMB_DURATION = 10 
+BOMBERMAN_LIFE = 5
+
 class ClassicGameRules:
   """
   These game rules manage the control flow of a game, deciding when
   and how the game starts and ends.
   """
-  BOMB_DURATION = 10 
   
   def __init__(self, timeout=30):
     self.timeout = timeout
+    self.BOMBERMAN_LIFE = BOMBERMAN_LIFE
 
   def newGame( self, layout, Agents, display, quiet = False, catchExceptions=False):
     agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]

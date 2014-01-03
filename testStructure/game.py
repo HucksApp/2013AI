@@ -495,6 +495,7 @@ class GameStateData:
     self._itemEaten = []
     self._itemDrop = []
     self._blockBroken = []
+    self._fire = []
     self._agentMoved = None
     self._lose = False
     self._win = False
@@ -508,6 +509,7 @@ class GameStateData:
     state._blockBroken = self._blockBroken
     state._bombExplode = self._bombExplode
     state._bombLaid = self._bombLaid
+    state._fire = self._fire
     return state
 
   def copyAgentStates( self, agentStates ):
@@ -609,7 +611,7 @@ class GameStateData:
       if num == numAgents: continue # Max ghosts reached already
       else: num += 1
       self.agentStates.append( AgentState( Configuration(pos, Directions.STOP)) )
-    self._eaten = [False for a in self.agentStates]
+    self._eaten = [0 for a in self.agentStates]
 
 try:
   import boinc
@@ -788,7 +790,7 @@ class Game:
           self._agentCrash(agentIndex)
           self.unmute()
           return
-      elif not self.state.data._eaten[agentIndex]:
+      elif self.state.data._eaten[agentIndex] < self.rules.BOMBERMAN_LIFE:
         action = agent.getAction(observation) # the real work code !!!!!
       else : action = Directions.STOP
       self.unmute()
