@@ -90,6 +90,14 @@ class GameState:
     if not state.data._eaten[agentIndex]:
       BombermanRules.applyAction( state, action, agentIndex )
 
+    if agentIndex == self.getNumAgents() - 1:
+      state.minusOneFrame()
+      for counter,position,power,index in state.data.bombs:
+        if counter == state.getFramesUntilEnd():
+          state.bombExplode(state.data.bombs,position,power)
+          state.getAgentState(index).recoverABomb()
+      state.data.bombs = [b for b in state.data.bombs if (b[0] != state.getFramesUntilEnd())]
+	  
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
 
@@ -129,6 +137,13 @@ class GameState:
     self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
     return self.data.FramesUntilEnd
 
+  def layABomb(self,agentIndex,pos):
+    self.data._bombLaid.append(pos)
+    self.data.map.add_bomb(pos)
+    self.getAgentState(agentIndex).minusABomb()
+    self.data.bombs.append( (self.data.FramesUntilEnd - ClassicGameRules.BOMB_DURATION , 
+                             pos, self.getAgentState(agentIndex).getBombPower() , agentIndex ) )
+	
   def bombExplode(self,bombs, position, power):
     x_int, y_int = position
     if not self.data.map.isBomb(position): return
@@ -334,9 +349,10 @@ class BombermanRules:
       BombermanRules.consume( nearest, state, index )
     # Lay bomb
     if action is Actions.LAY:
-      state.data._bombLaid.append(nearest)
-      state.data.map.add_bomb(nearest)
-      state.getAgentState(index).minusABomb()
+      state.layABomb(index,nearest)
+      #state.data._bombLaid.append(nearest)
+      #state.data.map.add_bomb(nearest)
+      #state.getAgentState(index).minusABomb()
   applyAction = staticmethod( applyAction )
 
   def consume( position, state , index):
