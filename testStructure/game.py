@@ -679,9 +679,10 @@ class Game:
     """
     self.display.initialize(self.state.data)
     self.numMoves = 0
-
+    start = time.time()
     ###self.display.initialize(self.state.makeObservation(1).data)
     # inform learning agents of the game start
+    #print 'Initialize agent:',time.time()-start
     for i in range(len(self.agents)):
       agent = self.agents[i]
       if not agent:
@@ -719,13 +720,14 @@ class Game:
 
     agentIndex = self.startingIndex
     numAgents = len( self.agents )
-
+    #print 'End of initialization and begin for game:',(time.time()-start)
     while not self.gameOver:
       # Fetch the next agent
       agent = self.agents[agentIndex]
       move_time = 0
       skip_action = False
       # Generate an observation of the state
+      #print 'Generate an observation of the state:',(time.time() - start)
       if 'observationFunction' in dir( agent ):
         self.mute(agentIndex)
         if self.catchExceptions:
@@ -749,6 +751,7 @@ class Game:
         observation = self.state.deepCopy()
 
       # Solicit an action
+      #print 'Solicit an action:',(time.time() - start)
       action = None
       self.mute(agentIndex)
       if self.catchExceptions:
@@ -796,6 +799,7 @@ class Game:
       self.unmute()
 
       # Execute the action
+      #print 'Execute the action:',(time.time()-start)
       self.moveHistory.append( (agentIndex, action) )
       if self.catchExceptions:
         try:
@@ -809,10 +813,11 @@ class Game:
         self.state = self.state.generateSuccessor( agentIndex, action )
 
       # Change the display
+      #print 'Change the display:',(time.time()-start)
       self.display.update( self.state.data )
       ###idx = agentIndex - agentIndex % 2 + 1
       ###self.display.update( self.state.makeObservation(idx).data )
-
+      #print 'display end:',(time.time()-start)
       # Allow for game specific conditions (winning, losing, etc.)
       self.rules.process(self.state, self)
       # Track progress
@@ -823,6 +828,7 @@ class Game:
 	  
       if _BOINC_ENABLED:
         boinc.set_fraction_done(self.getProgress())
+      
 
     # inform a learning agent of the game result
     for agent in self.agents:

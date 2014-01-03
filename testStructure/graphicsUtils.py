@@ -48,7 +48,7 @@ def sleep(secs):
         time.sleep(secs)
     else:
         _root_window.update_idletasks()
-        _root_window.after(int(1000 * secs), _root_window.quit)
+        _root_window.after(int(150*secs), _root_window.quit)
         _root_window.mainloop()
 
 def begin_graphics(width=640, height=480, color=formatColor(0, 0, 0), title=None):

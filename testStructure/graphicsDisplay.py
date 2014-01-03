@@ -239,6 +239,7 @@ class PacmanGraphics:
     #if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
     prevState, prevImage = self.agentImages[agentIndex]
     #if agentState.isPacman:
+    #if prevState.getPosition() != agentState.getPosition(): 
     self.animateAgent(agentState, prevState, prevImage, agentIndex)
     #else:
       #self.moveGhost(agentState, agentIndex, prevState, prevImage)
@@ -274,7 +275,7 @@ class PacmanGraphics:
 
   def drawAgent(self, pacman, index):
     position = self.getPosition(pacman)
-    screen_point = self.to_screen(position)
+    screen_x,screen_y = self.to_screen(position)
     endpoints = self.getEndpoints(self.getDirection(pacman))
 
     width = PACMAN_OUTLINE_WIDTH
@@ -285,7 +286,7 @@ class PacmanGraphics:
       outlineColor = TEAM_COLORS[index % 2]
       fillColor = GHOST_COLORS[index]
       width = PACMAN_CAPTURE_OUTLINE_WIDTH
-    return [bomberman_image_from(screen_point, 0,"./image/Stop1.gif")]
+    return [bomberman_image_from((screen_x-15,screen_y-15), 0,"./image/Stop1.gif")]
     """return [circle(screen_point, PACMAN_SCALE * self.gridSize,
                    fillColor = fillColor, outlineColor = outlineColor,
                    endpoints = endpoints,
@@ -325,15 +326,21 @@ class PacmanGraphics:
       if 'q' in keys:
         self.frameTime = 0.1
     if self.frameTime > 0.01 or self.frameTime < 0:
-      start = time.time()
-      fx, fy = self.getPosition(prevPacman)
+      dir = self.getDirection(agent)
+      pos = self.getPosition(prevPacman)
       px, py = self.getPosition(agent)
-      frames = 6.0
+      dx, dy = (px-pos[0]) , (py-pos[1])
+      dd = abs(dx+dy)
+      if dir is Directions.STOP or dd < 0.1 : frames = 2
+      elif dd < 0.55 : frames = 4
+      elif dd < 0.9 : frames = 6
+      else : frames = 8
+      dx, dy = dx/frames, dy/frames
       for i in range(1,int(frames) + 1):
-        pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
-        self.moveAgent(pos, self.getDirection(agent), image , i , agentIndex)
+        pos = pos[0]+dx,pos[1]+dy
+        self.moveAgent(pos, dir, image , i , agentIndex)
         refresh()
-        sleep(abs(self.frameTime) / frames)
+        sleep(abs(self.frameTime) / frames )
     else:
       self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
     refresh()
