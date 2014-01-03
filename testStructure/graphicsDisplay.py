@@ -9,7 +9,7 @@
 from graphicsUtils import *
 import math, time
 from game import Directions
-
+from util import *
 ###########################
 #  GRAPHICS DISPLAY CODE  #
 ###########################
@@ -73,7 +73,7 @@ CAPSULE_SIZE = 0.25
 
 # Item graphics
 ITEM_LINE_COLOR = formatColor(1,0,0)
-ITEM_FILL_COLOR = formatColor(1,0.5,0)
+ITEM_FILL_COLOR = [formatColor(0.5,0.5,0.5), formatColor(1,1,1) , formatColor(0,0,0) ]
 ITEM_SIZE = 0.4
 
 # Bomb graphics
@@ -85,10 +85,10 @@ BOMB_SIZE = 0.4
 WALL_RADIUS = 0.15
 
 class InfoPane:
-  def __init__(self, layout, gridSize):
+  def __init__(self, width, height, gridSize):
     self.gridSize = gridSize
-    self.width = (layout.width) * gridSize
-    self.base = (layout.height + 1) * gridSize
+    self.width = (width) * gridSize
+    self.base = (height + 1) * gridSize
     self.height = INFO_PANE_HEIGHT
     self.fontSize = 24
     self.textColor = PACMAN_COLOR
@@ -138,10 +138,7 @@ class InfoPane:
       for i, d in enumerate(distances):
         changeText(self.ghostDistanceText[i], d)
 
-  def drawGhost(self):
-    pass
-
-  def drawPacman(self):
+  def drawBomberman(self):
     pass
 
   def drawWarning(self):
@@ -180,21 +177,21 @@ class PacmanGraphics:
     self.previousState = state
 
   def startGraphics(self, state):
-    self.layout = state.layout
-    layout = self.layout
-    self.width = layout.width
-    self.height = layout.height
+    self.map = state.map
+    map = self.map
+    self.width = map.width
+    self.height = map.height
     self.make_window(self.width, self.height)
-    self.infoPane = InfoPane(layout, self.gridSize)
-    self.currentState = layout
+    self.infoPane = InfoPane(self.width,self.height, self.gridSize)
+    self.currentState = map
 
   def drawDistributions(self, state):
-    walls = state.layout.walls
+    map = state.map
     dist = []
-    for x in range(walls.width):
+    for x in range(map.width):
       distx = []
       dist.append(distx)
-      for y in range(walls.height):
+      for y in range(map.height):
           ( screen_x, screen_y ) = self.to_screen( (x, y) )
           block = square( (screen_x, screen_y),
                           0.5 * self.gridSize,
@@ -204,24 +201,19 @@ class PacmanGraphics:
     self.distributionImages = dist
 
   def drawStaticObjects(self, state):
-    layout = self.layout
-    self.drawWalls(layout.walls)
-    self.block = self.drawBlocks(layout.block)
-    self.food = self.drawFood(layout.food)
-    self.capsules = self.drawCapsules(layout.capsules)
-    self.items = self.drawItems(layout.items)
-    self.bomb = self.drawBomb(layout.bomb)
+    #layout = self.layout
+    map = self.map
+    self.drawWalls(map)
+    self.block = self.drawBlocks(map)
+    self.items = self.drawItems(map)
+    self.bomb = self.drawBomb(map)
     refresh()
 
   def drawAgentObjects(self, state):
     self.agentImages = [] # (agentState, image)
     for index, agent in enumerate(state.agentStates):
-      if agent.isPacman:
-        image = self.drawPacman(agent, index)
-        self.agentImages.append( (agent, image) )
-      else:
-        image = self.drawGhost(agent, index)
-        self.agentImages.append( (agent, image) )
+      image = self.drawAgent(agent, index)
+      self.agentImages.append( (agent, image) )
     refresh()
 
   def swapImages(self, agentIndex, newState):
@@ -230,38 +222,34 @@ class PacmanGraphics:
     """
     prevState, prevImage = self.agentImages[agentIndex]
     for item in prevImage: remove_from_screen(item)
-    if newState.isPacman:
-      image = self.drawPacman(newState, agentIndex)
-      self.agentImages[agentIndex] = (newState, image )
-    else:
-      image = self.drawGhost(newState, agentIndex)
-      self.agentImages[agentIndex] = (newState, image )
+    image = self.drawAgent(newState, agentIndex)
+    self.agentImages[agentIndex] = (newState, image )
     refresh()
 
   def update(self, newState):
     agentIndex = newState._agentMoved
     agentState = newState.agentStates[agentIndex]
 
-    if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
+    #print 'agentIndex:',agentIndex,'isPacman:',self.agentImages[agentIndex][0].isPacman,' and ',agentState.isPacman
+    #if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
     prevState, prevImage = self.agentImages[agentIndex]
-    if agentState.isPacman:
-      self.animatePacman(agentState, prevState, prevImage)
-    else:
-      self.moveGhost(agentState, agentIndex, prevState, prevImage)
+    #if agentState.isPacman:
+    self.animateAgent(agentState, prevState, prevImage, agentIndex)
+    #else:
+      #self.moveGhost(agentState, agentIndex, prevState, prevImage)
     self.agentImages[agentIndex] = (agentState, prevImage)
 
-    if newState._foodEaten != None:
-      self.removeFood(newState._foodEaten, self.food)
-    if newState._capsuleEaten != None:
-      self.removeCapsule(newState._capsuleEaten, self.capsules)
     if newState._bombLaid != None and len(newState._bombLaid) != 0:
       self.addBomb(newState._bombLaid,self.bomb)
     if newState._bombExplode != None and len(newState._bombExplode) != 0:
       self.removeBomb(newState._bombExplode, self.bomb)
     if newState._blockBroken != None and len(newState._blockBroken) != 0:
       self.removeBlock(newState._blockBroken, self.block)
+    if newState._itemDrop  != None and len(newState._itemDrop) != 0:
+      self.addItem(newState._itemDrop, self.items)
     if newState._itemEaten  != None and len(newState._itemEaten) != 0:
       self.removeItem(newState._itemEaten, self.items)
+
     self.infoPane.updateScore(newState.score)
     if 'ghostDistances' in dir(newState):
       self.infoPane.updateGhostDistances(newState.ghostDistances)
@@ -277,7 +265,7 @@ class PacmanGraphics:
                    BACKGROUND_COLOR,
                    "CS188 Pacman")
 
-  def drawPacman(self, pacman, index):
+  def drawAgent(self, pacman, index):
     position = self.getPosition(pacman)
     screen_point = self.to_screen(position)
     endpoints = self.getEndpoints(self.getDirection(pacman))
@@ -290,7 +278,7 @@ class PacmanGraphics:
       outlineColor = TEAM_COLORS[index % 2]
       fillColor = GHOST_COLORS[index]
       width = PACMAN_CAPTURE_OUTLINE_WIDTH
-    return [player_image_from(screen_point,"./bomberman/Stop1.gif")]
+    return [bomberman_image_from(screen_point, 0,"./image/Stop1.gif")]
     """return [circle(screen_point, PACMAN_SCALE * self.gridSize,
                    fillColor = fillColor, outlineColor = outlineColor,
                    endpoints = endpoints,
@@ -312,18 +300,18 @@ class PacmanGraphics:
       endpoints = (0+delta, 0-delta)
     return endpoints
 
-  def movePacman(self, position, direction, image, index):
+  def moveAgent(self, position, direction, image , index , bomberman_index):
     screenPosition = self.to_screen(position)
     endpoints = self.getEndpoints( direction, position )
     r = PACMAN_SCALE * self.gridSize
     #moveCircle(image[0], screenPosition, r, endpoints)
-    screenPosition = (screenPosition[0] - 10 , screenPosition[1] - 10 )
-    img =  "./bomberman/%s%d.gif" % (direction,index)
-    image[0] = player_image_from(screenPosition,img)
-    move_to(image[0],screenPosition[0],screenPosition[1])
+    screenPosition = (screenPosition[0] - 10 , screenPosition[1] - 10)
+    img = "./image/%s%d.gif" % (direction,index)
+    image[0] = bomberman_image_from(screenPosition, bomberman_index , img)
+    move_to(image[0],screenPosition[0] , screenPosition[1])
     refresh()
 
-  def animatePacman(self, pacman, prevPacman, image):
+  def animateAgent(self, agent, prevPacman, image, agentIndex):
     if self.frameTime < 0:
       print 'Press any key to step forward, "q" to play'
       keys = wait_for_keys()
@@ -332,92 +320,17 @@ class PacmanGraphics:
     if self.frameTime > 0.01 or self.frameTime < 0:
       start = time.time()
       fx, fy = self.getPosition(prevPacman)
-      px, py = self.getPosition(pacman)
-      frames = 6.0
+      px, py = self.getPosition(agent)
+      frames = 4.0
       for i in range(1,int(frames) + 1):
         pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
-        self.movePacman(pos, self.getDirection(pacman), image, i)
+        self.moveAgent(pos, self.getDirection(agent), image , i , agentIndex)
         refresh()
         sleep(abs(self.frameTime) / frames)
     else:
-      self.movePacman(self.getPosition(pacman), self.getDirection(pacman), image)
+      self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
     refresh()
 
-  def getGhostColor(self, ghost, ghostIndex):
-    if ghost.scaredTimer > 0:
-      return SCARED_COLOR
-    else:
-      return GHOST_COLORS[ghostIndex]
-
-  def drawGhost(self, ghost, agentIndex):
-    pos = self.getPosition(ghost)
-    dir = self.getDirection(ghost)
-    (screen_x, screen_y) = (self.to_screen(pos) )
-    coords = []
-    for (x, y) in GHOST_SHAPE:
-      coords.append((x*self.gridSize*GHOST_SIZE + screen_x, y*self.gridSize*GHOST_SIZE + screen_y))
-
-    colour = self.getGhostColor(ghost, agentIndex)
-    body = polygon(coords, colour, filled = 1)
-    WHITE = formatColor(1.0, 1.0, 1.0)
-    BLACK = formatColor(0.0, 0.0, 0.0)
-
-    dx = 0
-    dy = 0
-    if dir == 'North':
-      dy = -0.2
-    if dir == 'South':
-      dy = 0.2
-    if dir == 'East':
-      dx = 0.2
-    if dir == 'West':
-      dx = -0.2
-    leftEye = circle((screen_x+self.gridSize*GHOST_SIZE*(-0.3+dx/1.5), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy/1.5)), self.gridSize*GHOST_SIZE*0.2, WHITE, WHITE)
-    rightEye = circle((screen_x+self.gridSize*GHOST_SIZE*(0.3+dx/1.5), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy/1.5)), self.gridSize*GHOST_SIZE*0.2, WHITE, WHITE)
-    leftPupil = circle((screen_x+self.gridSize*GHOST_SIZE*(-0.3+dx), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy)), self.gridSize*GHOST_SIZE*0.08, BLACK, BLACK)
-    rightPupil = circle((screen_x+self.gridSize*GHOST_SIZE*(0.3+dx), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy)), self.gridSize*GHOST_SIZE*0.08, BLACK, BLACK)
-    ghostImageParts = []
-    ghostImageParts.append(body)
-    ghostImageParts.append(leftEye)
-    ghostImageParts.append(rightEye)
-    ghostImageParts.append(leftPupil)
-    ghostImageParts.append(rightPupil)
-
-    return ghostImageParts
-
-  def moveEyes(self, pos, dir, eyes):
-    (screen_x, screen_y) = (self.to_screen(pos) )
-    dx = 0
-    dy = 0
-    if dir == 'North':
-      dy = -0.2
-    if dir == 'South':
-      dy = 0.2
-    if dir == 'East':
-      dx = 0.2
-    if dir == 'West':
-      dx = -0.2
-    moveCircle(eyes[0],(screen_x+self.gridSize*GHOST_SIZE*(-0.3+dx/1.5), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy/1.5)), self.gridSize*GHOST_SIZE*0.2)
-    moveCircle(eyes[1],(screen_x+self.gridSize*GHOST_SIZE*(0.3+dx/1.5), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy/1.5)), self.gridSize*GHOST_SIZE*0.2)
-    moveCircle(eyes[2],(screen_x+self.gridSize*GHOST_SIZE*(-0.3+dx), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy)), self.gridSize*GHOST_SIZE*0.08)
-    moveCircle(eyes[3],(screen_x+self.gridSize*GHOST_SIZE*(0.3+dx), screen_y-self.gridSize*GHOST_SIZE*(0.3-dy)), self.gridSize*GHOST_SIZE*0.08)
-
-  def moveGhost(self, ghost, ghostIndex, prevGhost, ghostImageParts):
-    old_x, old_y = self.to_screen(self.getPosition(prevGhost))
-    new_x, new_y = self.to_screen(self.getPosition(ghost))
-    delta = new_x - old_x, new_y - old_y
-
-    for ghostImagePart in ghostImageParts:
-      move_by(ghostImagePart, delta)
-    refresh()
-
-    if ghost.scaredTimer > 0:
-      color = SCARED_COLOR
-    else:
-      color = GHOST_COLORS[ghostIndex]
-    edit(ghostImageParts[0], ('fill', color), ('outline', color))
-    self.moveEyes(self.getPosition(ghost), self.getDirection(ghost), ghostImageParts[-4:])
-    refresh()
 
   def getPosition(self, agentState):
     if agentState.configuration == None: return (-1000, -1000)
@@ -452,18 +365,18 @@ class PacmanGraphics:
       if self.capture and (xNum * 2) >= wallMatrix.width: wallColor = TEAM_COLORS[1]
 
       for yNum, cell in enumerate(x):
-        if cell: # There's a wall here
+        if wallMatrix.isWall((xNum,yNum)): # There's a wall here
           pos = (xNum, yNum)
           screen = self.to_screen(pos)
 
           square( screen ,0.5 * self.gridSize,color = wallColor, filled = 1, behind=2)		  		  
 
-  def isWall(self, x, y, walls):
+  """def isWall(self, x, y, walls):
     if x < 0 or y < 0:
       return False
     if x >= walls.width or y >= walls.height:
       return False
-    return walls[x][y]
+    return walls[x][y]"""
 
   def drawBlocks(self, blockMatrix):
     blockImages = []
@@ -474,7 +387,7 @@ class PacmanGraphics:
       imageRow = []
       blockImages.append(imageRow)
       for yNum, cell in enumerate(x):
-        if cell: # There's a block here
+        if blockMatrix.isBlock((xNum,yNum)): # There's a block here
           pos = (xNum, yNum)
           screen_x, screen_y = self.to_screen(pos)
           #block = square( screen ,0.5 * self.gridSize,color = blockColor, filled = 1, behind=2)
@@ -483,78 +396,40 @@ class PacmanGraphics:
         else:
           imageRow.append(None)
     return blockImages
-		  
-  def drawFood(self, foodMatrix ):
-    foodImages = []
-    color = FOOD_COLOR
-    for xNum, x in enumerate(foodMatrix):
-      if self.capture and (xNum * 2) <= foodMatrix.width: color = TEAM_COLORS[0]
-      if self.capture and (xNum * 2) > foodMatrix.width: color = TEAM_COLORS[1]
-      imageRow = []
-      foodImages.append(imageRow)
-      for yNum, cell in enumerate(x):
-        if cell: # There's food here
-          screen_x, screen_y = self.to_screen((xNum, yNum ))
-          """dot = circle( screen,
-                        FOOD_SIZE * self.gridSize,
-                        outlineColor = color, fillColor = color,
-                        width = 1)"""
-          dot = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
-          imageRow.append(dot)
-        else:
-          imageRow.append(None)
-    return foodImages
 
-  def drawCapsules(self, capsules ):
-    capsuleImages = {}
-    for capsule in capsules:
-      ( screen_x, screen_y ) = self.to_screen(capsule)
-      dot = circle( (screen_x, screen_y),
-                        CAPSULE_SIZE * self.gridSize,
-                        outlineColor = CAPSULE_COLOR,
-                        fillColor = CAPSULE_COLOR,
-                        width = 1)
-      capsuleImages[capsule] = dot
-    return capsuleImages
-
-  def drawItems(self, items ):
+  def drawItems(self, map ):
     itemImages = {}
-    for item in items:
-      ( screen_x, screen_y ) = self.to_screen(item)
-      dot = circle( (screen_x, screen_y),
-                        ITEM_SIZE * self.gridSize,
+    for x in range(map.width):
+      for y in range(map.height):
+        if map.isItem((x,y)): # There's a bomb here
+          screen_x, screen_y = self.to_screen((x,y))
+          dot = circle( (screen_x, screen_y),
+                        BOMB_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR,
+                        fillColor = ITEM_FILL_COLOR[map[xNum][yNum]-1],
                         width = 1)
-      itemImages[item] = dot
-    return itemImages	
+          itemImages[(x,y)] = dot
+    return itemImages
 
-  def drawBomb(self, bombs ):
+  def drawBomb(self, bombMatrix ):
     bombImages = {}
-    for bomb in bombs:
-      ( screen_x, screen_y ) = self.to_screen(bomb)
-      dot = circle( (screen_x, screen_y),
+    for x in range(bombMatrix.width):
+      for y in range(bombMatrix.height):
+        if bombMatrix.isBomb((x,y)): # There's a bomb here
+          screen_x, screen_y = self.to_screen((x,y))
+          dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
                         width = 1)
-      #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
-      bombImages[bomb] = dot
+          bombImages[(x,y)] = dot
     return bombImages
 	
   def removeBlock(self, cells, blockImages ):
     for cell in cells:
       x, y = cell
       remove_from_screen(blockImages[x][y])
-	
-  def removeFood(self, cell, foodImages ):
-    x, y = cell
-    remove_from_screen(foodImages[x][y])
-
-  def removeCapsule(self, cell, capsuleImages ):
-    x, y = cell
-    remove_from_screen(capsuleImages[(x, y)])
-
+	  
   def removeItem(self, cells, itemImages ):
     for cell in cells:
       x, y = cell
@@ -577,14 +452,14 @@ class PacmanGraphics:
       bombImages[cell] = dot
 
   def addItem(self, cells, itemsImages ):
-    for cell in cells:
-      ( screen_x, screen_y ) = self.to_screen(cell)
+    for x,y,type in cells:
+      ( screen_x, screen_y ) = self.to_screen((x,y))
       dot = circle( (screen_x, screen_y),
                         ITEM_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR,
+                        fillColor = ITEM_FILL_COLOR[type-1],
                         width = 1)
-      itemsImages[item] = dot
+      itemsImages[(x,y)] = dot
 
 	
   def drawExpandedCells(self, cells):

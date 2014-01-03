@@ -9,7 +9,9 @@
 from util import *
 import time, os
 import traceback
-  
+import random
+import math
+
 #######################
 # Parts worth reading #
 #######################
@@ -62,7 +64,7 @@ class Configuration:
   """
 
   def __init__(self, pos, direction):
-    self.pos = pos
+    self.pos = (float('%0.2f'%pos[0]),float('%0.2f'%pos[1]))
     self.direction = direction
 
   def getPosition(self):
@@ -96,10 +98,19 @@ class Configuration:
     Actions are movement vectors.
     """
     x, y= self.pos
+    cx,cy = math.ceil(x),math.ceil(y)
+    fx,fy = math.floor(x),math.floor(y)
     dx, dy = vector
     direction = Actions.vectorToDirection(vector)
+
     if direction == Directions.STOP:
       direction = self.direction # There is no stop direction
+    if ( x+dx > cx and cx > fx and dx > 0) or ( y+dy > cy and cy > fy and dy > 0) :
+      return Configuration((cx,cy),direction)
+	  
+    if ( x+dx < fx and cx > fx and dx < 0 ) or ( y+dy < fy and cy > fy and dy < 0) :
+      return Configuration((fx,fy),direction)
+
     return Configuration((x + dx, y+dy), direction)
 
 class AgentState:
@@ -107,13 +118,16 @@ class AgentState:
   AgentStates hold the state of an agent (configuration, speed, scared, etc).
   """
 
-  def __init__( self, startConfiguration, isPacman, speed = 1.0, N_Bomb = 3 ):
+  POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
+  SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
+  BOMB_NUMBER_LIMITATION = 10
+  
+  def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):
     self.start = startConfiguration
     self.configuration = startConfiguration
-    self.isPacman = isPacman
     self.speed = speed
     self.FramesUntilNextAction = 0
-    self.Bomb_Power = 1
+    self.Bomb_Power = 0
     self.Bomb_Total_Number = N_Bomb
     self.Bomb_Left_Number = self.Bomb_Total_Number
 
@@ -146,8 +160,30 @@ class AgentState:
   def getCounter(self):
     return self.FramesUntilNextAction
 	
-  def isPacman(self):
-    return self.isPacman
+	
+  def getBombPower(self):
+    return self.POWER_TABLE[self.Bomb_Power]
+
+  def getSpeed(self):
+    return self.SPEED_TABLE[self.speed]
+	
+  def minusABomb(self):
+    self.Bomb_Left_Number = self.Bomb_Left_Number - 1
+
+  def recoverABomb(self):
+    self.Bomb_Left_Number = self.Bomb_Left_Number + 1
+
+  def hasBomb(self):
+    return self.Bomb_Left_Number > 0
+	
+  def applyItemEffect(self, type):
+    if type is 1 and ( self.Bomb_Power+1 < len(self.POWER_TABLE) ): # Power up
+        self.Bomb_Power = self.Bomb_Power + 1 
+    elif type is 2 and ( self.speed+1 < len(self.SPEED_TABLE) ): # Speed up
+        self.speed = self.speed +1 
+    elif type is 3 and ( self.Bomb_Total_Number < self.BOMB_NUMBER_LIMITATION): # Number up
+        self.Bomb_Total_Number = self.Bomb_Total_Number + 1 
+        self.Bomb_Left_Number = self.Bomb_Left_Number + 1
 	
   def isActive(self):
     return self.FramesUntilNextAction == 0
@@ -273,6 +309,86 @@ def reconstituteGrid(bitRep):
   width, height = bitRep[:2]
   return Grid(width, height, bitRepresentation= bitRep[2:])
 
+  
+class Map(Grid):
+
+  BLOCK_CONST = 10
+  BOMB = 31
+  EMPTY = 0
+  WALL = 11
+  ITEM = range(1,10)
+  BLOCK = range(21,30)
+	
+  def __init__(self, width , height , layout = None ):
+    if layout is None : Grid.__init__(self,width,height)
+    else:
+      Grid.__init__(self,layout.width,layout.height)
+      for x in range(self.width):
+          for y in range(self.height):
+              if layout.walls[x][y]: self[x][y] = self.WALL
+              elif layout.block[x][y]: self[x][y] = random.choice(range(21,25))
+              elif (x,y,1) in layout.items: self[x][y] = 1
+              elif (x,y,2) in layout.items: self[x][y] = 2
+              elif (x,y,3) in layout.items: self[x][y] = 3
+              elif (x,y) in layout.bomb: self[x][y] = self.BOMB
+			
+  def isWall(self,pos):
+    x,y = pos
+    return self[x][y] == self.WALL
+	
+  def isItem(self,pos):
+    x,y = pos
+    return self[x][y] in self.ITEM
+	
+  def isBomb(self, pos):
+    x,y = pos
+    return self[x][y] == self.BOMB
+	
+  def isBlock(self , pos):
+    x,y = pos
+    return self[x][y] in self.BLOCK
+	
+  def isBlocked(self, pos):
+    x,y = pos
+    return self[x][y] > self.BLOCK_CONST
+
+  def isEmpty(self, pos):
+    x,y = pos
+    return self[x][y] is self.EMPTY
+
+  def getNumBombs(self):
+    return sum([x.count(self.BOMB) for x in self])     
+	
+  def get_data(self, pos):
+    x,y = pos
+    return self[x][y]
+   
+  def remove_object(self, pos):
+    x,y = pos
+    if self[x][y] in self.BLOCK:
+        self[x][y] = self[x][y] - 21
+        if self[x][y] in self.ITEM:
+            return self[x][y]
+    else:
+        self[x][y] = self.EMPTY
+    return None
+	   
+  def add_bomb(self, pos):
+    x,y = pos
+    self[x][y] = self.BOMB  
+
+  def copy(self):
+    g = Map(self.width, self.height)
+    g.data = [x[:] for x in self.data]
+    return g
+  
+  def deepCopy(self):
+    return self.copy()
+
+  def shallowCopy(self):
+    g = Map(self.width, self.height)
+    g.data = self.data
+    return g
 ####################################
 # Parts you shouldn't have to read #
 ####################################
@@ -324,7 +440,7 @@ class Actions:
     return (dx * speed, dy * speed)
   directionToVector = staticmethod(directionToVector)
 
-  def getPossibleActions(config, walls, block, bomb):
+  def getPossibleActions(config, map):
     possible = []
     x, y = config.pos
     x_int, y_int = int(x + 0.5), int(y + 0.5)
@@ -337,9 +453,9 @@ class Actions:
       dx, dy = vec
       next_y = y_int + dy
       next_x = x_int + dx
-      #if not walls[next_x][next_y] : possible.append(dir)
-      if not walls[next_x][next_y] and not block[next_x][next_y] and (next_x, next_y) not in bomb: possible.append(dir)
-
+      if not map.isBlock((next_x,next_y)) and not map.isWall((next_x,next_y)):
+ 	    if  ( Directions.STOP is dir ) or not ( map.isBomb((next_x,next_y))): possible.append(dir)
+    
     return possible
 
   getPossibleActions = staticmethod(getPossibleActions)
@@ -363,7 +479,8 @@ class Actions:
     x, y = position
     return (x + dx, y + dy)
   getSuccessor = staticmethod(getSuccessor)
-
+		
+  
 class GameStateData:
   """
 
@@ -373,21 +490,15 @@ class GameStateData:
     Generates a new data packet by copying information from its predecessor.
     """
     if prevState != None:
-      self.food = prevState.food.shallowCopy()
-      self.block = prevState.block.shallowCopy()
-      self.capsules = prevState.capsules[:]
-      self.items = prevState.items[:]
-      self.bomb = prevState.bomb[:]
       self.agentStates = self.copyAgentStates( prevState.agentStates )
-      self.layout = prevState.layout
+      self.map = prevState.map
       self._eaten = prevState._eaten
       self.score = prevState.score
       self.FramesUntilEnd = prevState.FramesUntilEnd
-    self._foodEaten = None
-    self._capsuleEaten = None
     self._bombLaid = []
     self._bombExplode = []
     self._itemEaten = []
+    self._itemDrop = []
     self._blockBroken = []
     self._agentMoved = None
     self._lose = False
@@ -396,11 +507,9 @@ class GameStateData:
 
   def deepCopy( self ):
     state = GameStateData( self )
-    state.food = self.food.deepCopy()
-    state.layout = self.layout.deepCopy()
+    state.map = self.map.deepCopy()
     state._agentMoved = self._agentMoved
-    state._foodEaten = self._foodEaten
-    state._capsuleEaten = self._capsuleEaten
+    state._itemDrop = self._itemDrop
     state._itemEaten = self._itemEaten
     state._blockBroken = self._blockBroken
     state._bombExplode = self._bombExplode
@@ -421,11 +530,7 @@ class GameStateData:
     if other == None: return False
     # TODO Check for type of other
     if not self.agentStates == other.agentStates: return False
-    if not self.food == other.food: return False
-    if not self.capsules == other.capsules: return False
-    if not self.block == other.block: return False
-    if not self.items == other.items: return False
-    if not self.bomb == other.bomb: return False
+    if not self.map == other.map: return False
     if not self.score == other.score: return False
     if not self.FramesUntilEnd == other.FramesUntilEnd: return False
     return True
@@ -440,10 +545,10 @@ class GameStateData:
       except TypeError, e:
         print e
         #hash(state)
-    return int((hash(tuple(self.agentStates)) + 13*hash(self.food) + 113* hash(tuple(self.capsules)) + 7 * hash(self.score)) % 1048575 )
+    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
 
   def __str__( self ):
-    width, height = self.layout.width, self.layout.height
+    width, height = self.map.width, self.map.height
     map = Grid(width, height)
     if type(self.food) == type((1,2)):
       self.food = reconstituteGrid(self.food)
@@ -457,10 +562,10 @@ class GameStateData:
       if agentState.configuration == None: continue
       x,y = [int( i ) for i in nearestPoint( agentState.configuration.pos )]
       agent_dir = agentState.configuration.direction
-      if agentState.isPacman:
-        map[x][y] = self._pacStr( agent_dir )
-      else:
-        map[x][y] = self._ghostStr( agent_dir )
+      #if agentState.isPacman:
+      map[x][y] = self._pacStr( agent_dir )
+      #else:
+        #map[x][y] = self._ghostStr( agent_dir )
 
     for x, y in self.capsules:
       map[x][y] = 'o'
@@ -494,27 +599,21 @@ class GameStateData:
       return '3'
     return 'E'
 
-  def initialize( self, layout, numGhostAgents ):
+  def initialize( self, layout, numAgents ):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    self.food = layout.food.copy()
-    self.block = layout.block.copy()
-    self.capsules = layout.capsules[:]
-    self.items = layout.items[:]
-    self.bomb = layout.bomb[:]
-    self.layout = layout
+    self.map = Map(0,0,layout)
     self.score = 0
     self.scoreChange = 0
     self.FramesUntilEnd  = 3000
 
     self.agentStates = []
-    numGhosts = 0
-    for isPacman, pos in layout.agentPositions:
-      if not isPacman:
-        if numGhosts == numGhostAgents: continue # Max ghosts reached already
-        else: numGhosts += 1
-      self.agentStates.append( AgentState( Configuration( pos, Directions.STOP), isPacman) )
+    num = 0
+    for index, pos in layout.agentPositions:
+      if num == numAgents: continue # Max ghosts reached already
+      else: num += 1
+      self.agentStates.append( AgentState( Configuration(pos, Directions.STOP)) )
     self._eaten = [False for a in self.agentStates]
 
 try:
@@ -544,7 +643,7 @@ class Game:
     self.agentTimeout = False
     import cStringIO
     self.agentOutput = [cStringIO.StringIO() for agent in agents]
-    
+
   def getProgress(self):
     if self.gameOver:
       return 1.0
@@ -576,48 +675,7 @@ class Game:
     # Revert stdout/stderr to originals
     sys.stdout = OLD_STDOUT
     sys.stderr = OLD_STDERR
-    
-  def explode(self, counter, pos, power):
-    breakdir = []
-    for i in range(power * 4):
-      if (i % 4) in breakdir:
-        continue
-      for case in switch(i % 4):
-        if case(0):
-          dir = (1+(i/4), 0)
-          break
-        if case(1):
-          dir = (0, -1-(i/4))
-          break
-        if case(2):
-          dir = (-1-(i/4), 0)
-          break
-        if case(3):
-          dir = (0, 1+(i/4))
-          break
-      targetpos = (pos[0] + dir[0], pos[1] + dir[1])
-      agentspos = [agent.getPosition() for agent in self.state.data.agentStates]
 
-      if(targetpos in self.state.data.items):
-        self.state.data._itemEaten.append(targetpos)
-        self.state.data.items.remove(targetpos)
-      elif(self.state.data.block[targetpos[0]][targetpos[1]] == True):
-        breakdir.append(i%4)
-        self.state.data._blockBroken.append(targetpos)
-        self.state.data.block[targetpos[0]][targetpos[1]] = False
-        # The block will become empty or any item
-      elif(self.state.data.layout.isWall(targetpos) == True):
-        breakdir.append(i%4)
-      elif(targetpos in agentspos):
-        for agent in self.state.data.agentStates:
-          if agent.getPosition() == targetpos:
-            agent.configuration = agent.start
-      elif(targetpos in self.state.data.bomb):
-        for bomb in self.bomb:
-          if bomb[1] == targetpos:
-            newbomb = (counter-1, bomb[1], bomb[2])
-            self.bomb.remove(bomb)
-            self.bomb.append(newbomb)
 
   def run( self ):
     """
@@ -662,6 +720,7 @@ class Game:
           agent.registerInitialState(self.state.deepCopy())
         ## TODO: could this exceed the total time
         self.unmute()
+
     agentIndex = self.startingIndex
     numAgents = len( self.agents )
 
@@ -735,8 +794,9 @@ class Game:
           self._agentCrash(agentIndex)
           self.unmute()
           return
-      else:
+      elif not self.state.data._eaten[agentIndex]:
         action = agent.getAction(observation) # the real work code !!!!!
+      else : action = Directions.STOP
       self.unmute()
 
       # Execute the action
@@ -752,18 +812,16 @@ class Game:
       else:
         self.state = self.state.generateSuccessor( agentIndex, action )
       # If the action is Lay a bomb
-      if action is 'Lay': 
-        self.bomb.append((self.state.getFramesUntilEnd() - 10, self.state.getAgentPosition(agentIndex), self.state.data.agentStates[agentIndex].Bomb_Power))
+      if action is Actions.LAY:
+        self.bomb.append((self.state.getFramesUntilEnd() - self.rules.BOMB_DURATION, nearestPoint(self.state.getAgentPosition(agentIndex)), self.state.getAgentState(agentIndex).getBombPower(),agentIndex))
       # Check FramesUntilEnd
       if agentIndex == numAgents-1:
         self.state.minusOneFrame()
-
-      for counter, position, power in self.bomb:
-        if counter == self.state.data.FramesUntilEnd:
-          self.state.data._bombExplode.append(position)
-          self.state.data.bomb.remove(position)
-          self.explode(counter, position, power)
-      self.bomb = [b for b in self.bomb if b[0] != self.state.data.FramesUntilEnd]
+        for counter,position,power,index in self.bomb:
+          if counter == self.state.data.FramesUntilEnd:
+            self.state.bombExplode(self.bomb,position,power)
+            self.state.getAgentState(index).recoverABomb()
+        self.bomb = [b for b in self.bomb if (b[0] != self.state.data.FramesUntilEnd)]
       # Change the display
       self.display.update( self.state.data )
       ###idx = agentIndex - agentIndex % 2 + 1
