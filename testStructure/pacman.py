@@ -328,7 +328,6 @@ class BombermanRules:
     """
     Returns a list of possible actions.
     """
-
     legal = Actions.getPossibleActions( state.getAgentState(index).configuration, state.data.map )
     if Actions.LAY in legal and not state.getAgentState(index).hasBomb():
         legal.remove(Actions.LAY)
