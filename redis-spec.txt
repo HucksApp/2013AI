@@ -1,0 +1,36 @@
+fps     -> 30
+speed   -> [ 30 25 15 10 5 ]
+mapname -> village
+mapsize -> 2,3
+
+map -> { 0:0 : 0
+         0:1 : 2
+         0:2 : 11
+         1:0 : 0
+         1:1 : 0
+         1:2 : 31 }
+
+player_ids  -> [ 0 1 2 3 ]
+
+player:0    -> { x           : 10.250
+                 y           : 8
+                 speed       : 2
+                 cd_time     : 20
+                 bomb_power  : 4
+                 n_bomb      : 10
+                 n_bomb_left : 8
+                 direction   : LEFT }
+
+bomb_ids -> [ 28 30 31 32 35 ]
+
+bomb:28  -> { x         : 0
+              y         : 1
+              power     : 4
+              cd_time   : 60
+              player_id : 0 }
+
+agent:0:action -> UP
+agent:1:action -> DOWN
+agent:2:action -> LEFT
+agent:3:action -> RIGHT
+
