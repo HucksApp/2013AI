@@ -97,7 +97,9 @@ class GameState:
           state.bombExplode(state.data.bombs,position,power)
           state.getAgentState(index).recoverABomb()
       state.data.bombs = [b for b in state.data.bombs if (b[0] != state.getFramesUntilEnd())]
-	  
+
+    self.updateBombScore()	
+    self.updataMapScore()	
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
 
@@ -143,6 +145,7 @@ class GameState:
     self.getAgentState(agentIndex).minusABomb()
     self.data.bombs.append( (self.data.FramesUntilEnd - BOMB_DURATION , 
                              pos, self.getAgentState(agentIndex).getBombPower() , agentIndex ) )
+
 	
   def bombExplode(self,bombs, position, power):
     x_int, y_int = position
@@ -152,7 +155,7 @@ class GameState:
     if not position in self.data._fire:
       self.checkDie(position)
       self.data._fire.append(position)
-    for vec in [ v for dir, v in Actions._directionsAsList if ( dir != Actions.LAY and dir != Directions.STOP)]:
+    for vec in [ v for dir, v in Actions._directionsAsList if ( not dir in  [ Actions.LAY ,Directions.STOP])]:
       isbreak = False
       i = 0
       dx, dy = vec
@@ -197,7 +200,40 @@ class GameState:
       if manhattanDistance(position,(sx,sy)) <= 0.5:
         self.data._eaten[index] += 1 
         agent.configuration = agent.start		
-  
+
+  def updateBombScore(self):
+    # The change to the BombScore:
+    self.data.BombScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
+    for counter, pos, power, index in self.data.bombs:
+      score = self.getBombScore(counter)
+      self.data.BombScore[pos[0]][pos[1]] += score
+      isbreak = False
+      for vec in [v for dir, v in Actions._directionsAsList if ( not dir in  [ Actions.LAY ,Directions.STOP])]:
+        isbreak = False
+        i = 0
+        dx,dy = vec
+        next_x,next_y = pos
+        while not isbreak and i < power:
+          i += 1
+          next_x = int(next_x+dx)
+          next_y = int(next_y+dy)
+          if self.data.map.isBlock((next_x,next_y)) or self.data.map.isWall((next_x,next_y)):
+            isbreak = True
+          else :
+            self.data.BombScore[next_x][next_y] += score
+
+  def updataMapScore(self):
+    self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
+    for x in range(self.data.map.width):
+      for y in range(self.data.map.height):
+        if not self.data.map.isBlocked((x,y)):
+          main = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
+          second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
+          self.data.MapScore[x][y] = ( main.count(True)*0.5 + second.count(True)*0.4 )
+		  
+  def getBombScore(self, counter):
+    return BOMB_DURATION - (self.getFramesUntilEnd() - counter)
+		
   #############################################
   #             Helper methods:               #
   # You shouldn't need to call these directly #
