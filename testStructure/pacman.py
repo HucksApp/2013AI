@@ -123,6 +123,18 @@ class GameState:
   def getScore( self ):
     return self.data.score
 
+  def getMapScore(self,x,y=None):
+    if y is None:
+      try : x,y = x
+      except: raise  'incomprehensible coordinates' 
+    return self.data.MapScore[x][y]
+	
+  def getBombScore(self,x,y=None):
+    if y is None:
+      try : x,y = x
+      except: raise  'incomprehensible coordinates' 
+    return self.data.BombScore[x][y]
+	  
   def hasWall(self, x, y):
     return self.data.map.isWall((x,y))
 
