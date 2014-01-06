@@ -144,9 +144,9 @@ class AgentState:
 
   def copy( self ):
     state = AgentState( self.start, self.speed, self.Bomb_Total_Number )
-    state.configuration = self.configuration
-    state.Bomb_Power = self.Bomb_Power
-    state.Bomb_Left_Number = self.Bomb_Left_Number	
+    state.configuration = Configuration(self.getPosition(),self.getDirection())
+    state.Bomb_Power = self.Bomb_Power + 0
+    state.Bomb_Left_Number = self.Bomb_Left_Number + 0
     return state
 
   def getPosition(self):
@@ -486,12 +486,12 @@ class GameStateData:
     if prevState != None:
       self.agentStates = self.copyAgentStates( prevState.agentStates )
       self.map = prevState.map.deepCopy()
-      self._eaten = prevState._eaten
+      self._eaten = prevState._eaten[:]
       self.score = prevState.score
-      self.BombScore = prevState.BombScore
-      self.MapScore = prevState.MapScore
+      self.BombScore = prevState.BombScore.deepCopy()
+      self.MapScore = prevState.MapScore.deepCopy()
       self.FramesUntilEnd = prevState.FramesUntilEnd
-      self.bombs = prevState.bombs
+      self.bombs = prevState.bombs[:]
     self._bombLaid = []
     self._bombExplode = []
     self._itemEaten = []
@@ -506,12 +506,12 @@ class GameStateData:
   def deepCopy( self ):
     state = GameStateData( self )
     state._agentMoved = self._agentMoved
-    state._itemDrop = self._itemDrop
-    state._itemEaten = self._itemEaten
-    state._blockBroken = self._blockBroken
-    state._bombExplode = self._bombExplode
-    state._bombLaid = self._bombLaid
-    state._fire = self._fire
+    state._itemDrop = self._itemDrop[:]
+    state._itemEaten = self._itemEaten[:]
+    state._blockBroken = self._blockBroken[:]
+    state._bombExplode = self._bombExplode[:]
+    state._bombLaid = self._bombLaid[:]
+    state._fire = self._fire[:]
     return state
 
   def copyAgentStates( self, agentStates ):
@@ -826,7 +826,7 @@ class Game:
           return
       else:
         self.state = self.state.generateSuccessor( agentIndex, action )
-
+		
       # Change the display
       #print 'Change the display:',(time.time()-start)
       self.display.update( self.state.data )

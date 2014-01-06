@@ -74,7 +74,7 @@ class GameState:
     if self.isWin() or self.isLose(): return []
     return BombermanRules.getLegalActions( self , agentIndex)
 
-  def generateSuccessor( self, agentIndex, action):
+  def generateSuccessor( self, agentIndex, action , force = False):
     """
     Returns the successor state after the specified agent takes the action.
     """
@@ -90,7 +90,7 @@ class GameState:
     if state.data._eaten[agentIndex] < BOMBERMAN_LIFE:
       BombermanRules.applyAction( state, action, agentIndex )
 
-    if agentIndex == self.getNumAgents() - 1:
+    if force or ( agentIndex == state.getNumAgents() - 1):
       state.minusOneFrame()
       for counter,position,power,index in state.data.bombs:
         if counter == state.getFramesUntilEnd():
@@ -98,8 +98,8 @@ class GameState:
           state.getAgentState(index).recoverABomb()
       state.data.bombs = [b for b in state.data.bombs if (b[0] != state.getFramesUntilEnd())]
 
-    self.updateBombScore()	
-    self.updataMapScore()	
+    state.updateBombScore()	
+    state.updataMapScore()	
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
 
