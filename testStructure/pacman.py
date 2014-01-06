@@ -217,7 +217,7 @@ class GameState:
     # The change to the BombScore:
     self.data.BombScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
     for counter, pos, power, index in self.data.bombs:
-      score = self.getBombScore(counter)
+      score = self.calBombScore(counter)
       self.data.BombScore[pos[0]][pos[1]] += score
       isbreak = False
       for vec in [v for dir, v in Actions._directionsAsList if ( not dir in  [ Actions.LAY ,Directions.STOP])]:
@@ -243,7 +243,7 @@ class GameState:
           second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
           self.data.MapScore[x][y] = ( main.count(True)*0.5 + second.count(True)*0.4 )
 		  
-  def getBombScore(self, counter):
+  def calBombScore(self, counter):
     return BOMB_DURATION - (self.getFramesUntilEnd() - counter)
 		
   #############################################
