@@ -628,6 +628,18 @@ class GameStateData:
           second = [self.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
           self.MapScore[x][y] += ( main.count(True)*0.5 + second.count(True)*0.4 )
 
+  def clear(self):
+    self._bombLaid = []
+    self._bombExplode = []
+    self._itemEaten = []
+    self._itemDrop = []
+    self._blockBroken = []
+    self._fire = []
+    self._agentMoved = None
+    self._lose = False
+    self._win = False
+    self.scoreChange = 0
+		  
 try:
   import boinc
   _BOINC_ENABLED = True
@@ -692,11 +704,11 @@ class Game:
     Main control loop for game play.
     """
     self.display.initialize(self.state.data)
-    self.numMoves = 0
     start = time.time()
+
     ###self.display.initialize(self.state.makeObservation(1).data)
     # inform learning agents of the game start
-    #print 'Initialize agent:',time.time()-start
+
     for i in range(len(self.agents)):
       agent = self.agents[i]
       if not agent:
@@ -713,50 +725,38 @@ class Game:
         ## TODO: could this exceed the total time
         self.unmute()
 
-    agentIndex = self.startingIndex
     numAgents = len( self.agents )
-    #print 'End of initialization and begin for game:',(time.time()-start)
-    while not self.gameOver:
-      # Fetch the next agent
-      agent = self.agents[agentIndex]
-      move_time = 0
-      skip_action = False
-      # Generate an observation of the state
-      #print 'Generate an observation of the state:',(time.time() - start)
-      if 'observationFunction' in dir( agent ):
-        self.mute(agentIndex)
-        observation = agent.observationFunction(self.state.deepCopy())
-        self.unmute()
-      else:
-        observation = self.state.deepCopy()
-
-      # Solicit an action
-      #print 'Solicit an action:',(time.time() - start)
-      action = None
-      self.mute(agentIndex)
-      if self.state.data._eaten[agentIndex] > 0:
-        action = agent.getAction(observation) # the real work code !!!!!
-      else : action = Directions.STOP
-      self.unmute()
-
-      # Execute the action
-      #print 'Execute the action:',(time.time()-start)
-      self.moveHistory.append( (agentIndex, action) )
-      self.state = self.state.generateSuccessor( agentIndex, action )
+    actionList = [None for i in range(numAgents)]
 	
+    while not self.gameOver:
+
+      observation = self.state.deepCopy()
+	  
+      for agentIndex in range(numAgents):
+        # Fetch the next agent
+        agent = self.agents[agentIndex]
+  
+        # Solicit an action
+        action = None
+        self.mute(agentIndex)
+        if self.state.data._eaten[agentIndex] > 0:
+          action = agent.getAction(observation) 
+        else : action = Directions.STOP
+        self.unmute()
+        actionList[agentIndex] = action
+		
+      # Execute the action
+      self.state.updateState(actionList)
+      self.moveHistory.extend( [(agentIndex, action) for agentIndex,action in enumerate(actionList)])
+	  
       # Change the display
-      #print 'Change the display:',(time.time()-start)
-      self.display.update( self.state.data )
+      #start = time.time()
+      self.display.updateDisplay( self.state.data )
       ###idx = agentIndex - agentIndex % 2 + 1
       ###self.display.update( self.state.makeObservation(idx).data )
       #print 'display end:',(time.time()-start)
       # Allow for game specific conditions (winning, losing, etc.)
       self.rules.process(self.state, self)
-      # Track progress
-      if agentIndex == numAgents + 1: self.numMoves += 1
-      # Next agent
-      agentIndex = ( agentIndex + 1 ) % numAgents
-
 	  
       if _BOINC_ENABLED:
         boinc.set_fraction_done(self.getProgress())

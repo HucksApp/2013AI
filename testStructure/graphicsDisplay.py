@@ -231,6 +231,40 @@ class PacmanGraphics:
     self.agentImages[agentIndex] = (newState, image )
     refresh()
 
+  def updateDisplay(self, newState):
+  
+    if len(newState._bombLaid) != 0:
+      self.addBomb(newState._bombLaid,self.bomb)
+	  
+
+    self.animateDisplay(newState)
+    #agentIndex = newState._agentMoved
+    #agentState = newState.agentStates[agentIndex]
+
+    #print 'agentIndex:',agentIndex,'isPacman:',self.agentImages[agentIndex][0].isPacman,' and ',agentState.isPacman
+    #if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
+    #prevState, prevImage = self.agentImages[agentIndex]
+    #if agentState.isPacman:
+    #if prevState.getPosition() != agentState.getPosition(): 
+    #self.animateAgent(agentState, prevState, prevImage, agentIndex)
+    #else:
+      #self.moveGhost(agentState, agentIndex, prevState, prevImage)
+    #self.agentImages[agentIndex] = (agentState, prevImage)
+
+    if len(newState._fire) != 0:
+      self.animateExplode(newState._fire)
+
+    if len(newState._bombExplode) != 0:
+      self.removeDictImage(newState._bombExplode, self.bomb)
+    if len(newState._blockBroken) != 0:
+      self.removeGridImage(newState._blockBroken, self.block)
+    if len(newState._itemDrop) != 0:
+      self.addItem(newState._itemDrop, self.items)
+    if len(newState._itemEaten) != 0: 
+      self.removeDictImage(newState._itemEaten, self.items)
+
+    self.infoPane.updateScore(newState.score)
+	
   def update(self, newState):
     agentIndex = newState._agentMoved
     agentState = newState.agentStates[agentIndex]
@@ -308,7 +342,7 @@ class PacmanGraphics:
       endpoints = (0+delta, 0-delta)
     return endpoints
 
-  def moveAgent(self, position, direction, images , index , bomberman_index):
+  def moveAgent(self, position, direction, images , index, bomberman_index = 0):
     screenPosition = self.to_screen(position)
     endpoints = self.getEndpoints( direction, position )
     r = PACMAN_SCALE * self.gridSize
@@ -316,7 +350,6 @@ class PacmanGraphics:
     screenPosition = (screenPosition[0] - 10 , screenPosition[1] - 10)
     img = "./image/%s%d.gif" % (direction,index)
     remove_from_screen(images[0])
-    #image[0] = bomberman_image_from(screenPosition, bomberman_index , img )
     images[0] = image(screenPosition, img )
     move_to(images[0],screenPosition[0] , screenPosition[1])
     refresh()
@@ -363,6 +396,36 @@ class PacmanGraphics:
         remove_from_screen(image)
       refresh()
       
+  def animateDisplay(self, newState):
+    if self.frameTime < 0:
+      print 'Press any key to step forward, "q" to play'
+      keys = wait_for_keys()
+      if 'q' in keys:
+        self.frameTime = 0.1
+
+    if self.frameTime > 0.01 or self.frameTime < 0:
+      
+      frames = 4.0
+      dir = [self.getDirection(agent) for agent in newState.agentStates]
+      pos = [self.getPosition(prevAgent) for prevAgent,image in self.agentImages]
+      des = [self.getPosition(agent) for agent in newState.agentStates]
+      vec = [((dd[0]-pp[0])/frames,(dd[1]-pp[1])/frames) for pp,dd in zip(pos,des)]
+      
+      for f in range(1,int(frames)+1):
+        for agentIndex,prevAgent in enumerate(self.agentImages):
+           state,image = prevAgent
+           pos[agentIndex] = (pos[agentIndex][0] + vec[agentIndex][0],pos[agentIndex][1] + vec[agentIndex][1])
+           self.moveAgent(pos[agentIndex], dir[agentIndex], image , f , agentIndex)
+           refresh()
+        sleep(abs(self.frameTime) / frames )
+  
+
+    else:  # No animation need !  Direct Move Agents to position and no fire !
+      for agentIndex,agent in enumerate(newState.agentStates):
+        state,image = self.agentImages[agentIndex]
+        self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
+        self.agentImages[agentIndex] = (agent, image)
+    refresh()
 	
   def getPosition(self, agentState):
     if agentState.configuration == None: return (-1000, -1000)
@@ -403,12 +466,6 @@ class PacmanGraphics:
 
           square( screen ,0.5 * self.gridSize,color = wallColor, filled = 1, behind=2)		  		  
 
-  """def isWall(self, x, y, walls):
-    if x < 0 or y < 0:
-      return False
-    if x >= walls.width or y >= walls.height:
-      return False
-    return walls[x][y]"""
 
   def drawBlocks(self, blockMatrix):
     blockImages = []

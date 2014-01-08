@@ -66,6 +66,31 @@ class GameState:
   # Accessor methods: use these to access state data #
   ####################################################
 
+  def updateState(self, actions):
+    """
+    Returns the successor state after the actions of all active agents.
+    """
+    # Check that successors exist  
+    if self.isWin() or self.isLose(): raise Exception('it is terminal state now.')
+
+    self.data.clear()
+	
+    for agentIndex in range(len(actions)):
+      if self.data._eaten[agentIndex] > 0:
+        BombermanRules.applyAction( self, actions[agentIndex], agentIndex )
+
+    self.minusOneFrame()
+    for counter,position,power,index in self.data.bombs:
+      if counter == self.getFramesUntilEnd():
+        self.bombExplode(self.data.bombs,position,power)
+        self.getAgentState(index).recoverABomb()
+    self.data.bombs = [b for b in self.data.bombs if (b[0] != self.getFramesUntilEnd())]
+
+    self.updateBombScore()	
+    self.updataMapScore()
+	
+    self.data.score = self.data._eaten[0]
+
   
   def getLegalActions( self, agentIndex=0 ):
     """
@@ -139,7 +164,7 @@ class GameState:
     return self.data.map.isWall((x,y))
 
   def isLose( self ):
-    return self.data._lose
+    return self.getNumAgents() == 1 and self.data._eaten[0] == 0
 
   def isWin( self ):
     return ( self.getNumAgents()!=1 and self.data._eaten.count(0) is self.getNumAgents()-1 ) 
@@ -390,14 +415,14 @@ class BombermanRules:
     """
     legal = BombermanRules.getLegalActions( state, index)
     if action not in legal:
-      raise Exception("Illegal action " + str(action) + " with agentIndex " + str(index) + ' and legals:' + str(legal))
+      print ("Illegal action " + str(action) + " with agentIndex " + str(index) + ' and legals:' + str(legal))
+      action = random.choice(legal)
 
     agentState = state.data.agentStates[index]
 
     # Update Configuration
     vector = Actions.directionToVector( action, agentState.getSpeed() )
     agentState.configuration = agentState.configuration.generateSuccessor( vector )
-    #print 'newPosition:', agentState.configuration.getPosition()
     # Eat
     next = agentState.configuration.getPosition()
     nearest = nearestPoint( next )
@@ -407,9 +432,7 @@ class BombermanRules:
     # Lay bomb
     if action is Actions.LAY:
       state.layABomb(index,nearest)
-      #state.data._bombLaid.append(nearest)
-      #state.data.map.add_bomb(nearest)
-      #state.getAgentState(index).minusABomb()
+	  
   applyAction = staticmethod( applyAction )
 
   def consume( position, state , index):
