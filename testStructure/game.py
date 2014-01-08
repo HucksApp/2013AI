@@ -497,7 +497,7 @@ class GameStateData:
     self._itemEaten = []
     self._itemDrop = []
     self._blockBroken = []
-    self._fire = []
+    self._fire = [[] for i in range(6)]
     self._agentMoved = None
     self._lose = False
     self._win = False
@@ -511,7 +511,7 @@ class GameStateData:
     state._blockBroken = self._blockBroken[:]
     state._bombExplode = self._bombExplode[:]
     state._bombLaid = self._bombLaid[:]
-    state._fire = self._fire[:]
+    state._fire = [self._fire[i][:] for i in range(6)]
     return state
 
   def copyAgentStates( self, agentStates ):
@@ -634,7 +634,7 @@ class GameStateData:
     self._itemEaten = []
     self._itemDrop = []
     self._blockBroken = []
-    self._fire = []
+    self._fire = [[] for i in range(6)]
     self._agentMoved = None
     self._lose = False
     self._win = False

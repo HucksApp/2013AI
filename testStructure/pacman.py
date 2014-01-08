@@ -189,9 +189,12 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    if not position in self.data._fire:
+    fired = [] + self.data._fire[0]+ self.data._fire[1] + self.data._fire[2] + self.data._fire[3] + self.data._fire[4] + self.data._fire[5]
+	
+    if not position in fired:
       self.checkDie(position)
-      self.data._fire.append(position)
+      self.data._fire[0].append(position)
+      fired.append(position)
     for vec in [ v for dir, v in Actions._directionsAsList if ( not dir in  [ Actions.LAY ,Directions.STOP])]:
       isbreak = False
       i = 0
@@ -202,15 +205,17 @@ class GameState:
           next_y = int(next_y + dy)
           next_x = int(next_x + dx)
           pos = (next_x,next_y)
-          if pos in self.data._fire: continue
+          if pos in fired: continue
           if self.data.map.isEmpty(pos):
             self.checkDie(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
           elif self.data.map.isBlock(pos):
             isbreak = True
             self.data._blockBroken.append(pos)
             res = self.data.map.remove_object(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             if res != None:
               self.data._itemDrop.append((next_x,next_y,res))
           elif self.data.map.isWall(pos):
@@ -218,11 +223,13 @@ class GameState:
           elif self.data.map.isItem(pos):
             self.data._itemEaten.append(pos)
             self.data.map.remove_object(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             self.checkDie(pos)
           elif self.data.map.isBomb(pos):
             self.checkDie(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-int(BOMB_DURATION/10)) ]
             if len(bombSweep) is 1:
               bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-int(BOMB_DURATION/10),)+bombSweep[0][1][1:]

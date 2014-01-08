@@ -236,23 +236,7 @@ class PacmanGraphics:
     if len(newState._bombLaid) != 0:
       self.addBomb(newState._bombLaid,self.bomb)
 	  
-
     self.animateDisplay(newState)
-    #agentIndex = newState._agentMoved
-    #agentState = newState.agentStates[agentIndex]
-
-    #print 'agentIndex:',agentIndex,'isPacman:',self.agentImages[agentIndex][0].isPacman,' and ',agentState.isPacman
-    #if self.agentImages[agentIndex][0].isPacman != agentState.isPacman: self.swapImages(agentIndex, agentState)
-    #prevState, prevImage = self.agentImages[agentIndex]
-    #if agentState.isPacman:
-    #if prevState.getPosition() != agentState.getPosition(): 
-    #self.animateAgent(agentState, prevState, prevImage, agentIndex)
-    #else:
-      #self.moveGhost(agentState, agentIndex, prevState, prevImage)
-    #self.agentImages[agentIndex] = (agentState, prevImage)
-
-    if len(newState._fire) != 0:
-      self.animateExplode(newState._fire)
 
     if len(newState._bombExplode) != 0:
       self.removeDictImage(newState._bombExplode, self.bomb)
@@ -387,7 +371,6 @@ class PacmanGraphics:
       if 'q' in keys:
         self.frameTime = 0.1
     if self.frameTime > 0.01 or self.frameTime < 0:
-      start = time.time()
       fireImage = {}
       self.addFire(positions,fireImage)
       refresh()
@@ -405,21 +388,31 @@ class PacmanGraphics:
 
     if self.frameTime > 0.01 or self.frameTime < 0:
       
-      frames = 4.0
+      frames = 6.0
       dir = [self.getDirection(agent) for agent in newState.agentStates]
       pos = [self.getPosition(prevAgent) for prevAgent,image in self.agentImages]
       des = [self.getPosition(agent) for agent in newState.agentStates]
       vec = [((dd[0]-pp[0])/frames,(dd[1]-pp[1])/frames) for pp,dd in zip(pos,des)]
+      agentImage = [image for state,image in self.agentImages]
+      fireImage = {}
+	  
+      if not len(newState._fire) is 0: fireImage = {}
       
       for f in range(1,int(frames)+1):
-        for agentIndex,prevAgent in enumerate(self.agentImages):
-           state,image = prevAgent
+        for agentIndex in range(len(pos)):
+           if newState._eaten[agentIndex] == 0 and pos[agentIndex] is (0,0): continue
            pos[agentIndex] = (pos[agentIndex][0] + vec[agentIndex][0],pos[agentIndex][1] + vec[agentIndex][1])
-           self.moveAgent(pos[agentIndex], dir[agentIndex], image , f , agentIndex)
-           refresh()
+           self.moveAgent(pos[agentIndex], dir[agentIndex], agentImage[agentIndex] , f%6+1 , agentIndex)
+        self.addFire(newState._fire[f-1],fireImage)
+        refresh()
         sleep(abs(self.frameTime) / frames )
-  
-
+        #print 'call sleep:',abs(self.frameTime)/frames 
+		
+      for image in fireImage.values():
+        remove_from_screen(image)
+      refresh()
+      self.agentImages = zip(newState.agentStates,agentImage)
+	  
     else:  # No animation need !  Direct Move Agents to position and no fire !
       for agentIndex,agent in enumerate(newState.agentStates):
         state,image = self.agentImages[agentIndex]
