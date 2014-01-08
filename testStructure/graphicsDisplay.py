@@ -286,7 +286,7 @@ class PacmanGraphics:
       outlineColor = TEAM_COLORS[index % 2]
       fillColor = GHOST_COLORS[index]
       width = PACMAN_CAPTURE_OUTLINE_WIDTH
-    return [bomberman_image_from((screen_x-15,screen_y-15), 0,"./image/Stop1.gif")]
+    return [image((screen_x-15,screen_y-15),"./image/Stop1.gif")]
     """return [circle(screen_point, PACMAN_SCALE * self.gridSize,
                    fillColor = fillColor, outlineColor = outlineColor,
                    endpoints = endpoints,
@@ -308,15 +308,17 @@ class PacmanGraphics:
       endpoints = (0+delta, 0-delta)
     return endpoints
 
-  def moveAgent(self, position, direction, image , index , bomberman_index):
+  def moveAgent(self, position, direction, images , index , bomberman_index):
     screenPosition = self.to_screen(position)
     endpoints = self.getEndpoints( direction, position )
     r = PACMAN_SCALE * self.gridSize
     #moveCircle(image[0], screenPosition, r, endpoints)
     screenPosition = (screenPosition[0] - 10 , screenPosition[1] - 10)
     img = "./image/%s%d.gif" % (direction,index)
-    image[0] = bomberman_image_from(screenPosition, bomberman_index , img)
-    move_to(image[0],screenPosition[0] , screenPosition[1])
+    remove_from_screen(images[0])
+    #image[0] = bomberman_image_from(screenPosition, bomberman_index , img )
+    images[0] = image(screenPosition, img )
+    move_to(images[0],screenPosition[0] , screenPosition[1])
     refresh()
 
   def animateAgent(self, agent, prevPacman, image, agentIndex):
@@ -421,7 +423,8 @@ class PacmanGraphics:
           pos = (xNum, yNum)
           screen_x, screen_y = self.to_screen(pos)
           #block = square( screen ,0.5 * self.gridSize,color = blockColor, filled = 1, behind=2)
-          block = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
+          #block = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
+          block = image((screen_x-15,screen_y-15), "./image/box.gif")
           imageRow.append(block)
         else:
           imageRow.append(None)
@@ -452,7 +455,8 @@ class PacmanGraphics:
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
                         width = 1)"""
-          dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
+          #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
+          dot = image((screen_x-15,screen_y-15), "./image/bomb.gif")
           bombImages[(x,y)] = dot
     return bombImages
 	
@@ -474,7 +478,8 @@ class PacmanGraphics:
                         outlineColor = BOMB_COLOR,
                         fillColor = BOMB_COLOR,
                         width = 1)"""
-      dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
+      #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
+      dot = image((screen_x-15,screen_y-15), "./image/bomb.gif")
       bombImages[cell] = dot
 
   def addItem(self, cells, itemsImages ):

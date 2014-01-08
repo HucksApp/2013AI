@@ -826,7 +826,7 @@ class Game:
           return
       else:
         self.state = self.state.generateSuccessor( agentIndex, action )
-		
+	
       # Change the display
       #print 'Change the display:',(time.time()-start)
       self.display.update( self.state.data )
