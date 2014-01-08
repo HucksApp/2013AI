@@ -87,7 +87,7 @@ class GameState:
     # Let agent's logic deal with its action's effects on the board
 
     #state.data._eaten = [False for i in range(state.getNumAgents())]
-    if state.data._eaten[agentIndex] < BOMBERMAN_LIFE:
+    if state.data._eaten[agentIndex] > 0:
       BombermanRules.applyAction( state, action, agentIndex )
 
     if force or ( agentIndex == state.getNumAgents() - 1):
@@ -142,7 +142,7 @@ class GameState:
     return self.data._lose
 
   def isWin( self ):
-    return ( self.getNumAgents()!=1 and self.data._eaten.count(BOMBERMAN_LIFE) is self.getNumAgents()-1 ) 
+    return ( self.getNumAgents()!=1 and self.data._eaten.count(0) is self.getNumAgents()-1 ) 
 
   def getFramesUntilEnd(self ):
     return self.data.FramesUntilEnd
@@ -206,11 +206,11 @@ class GameState:
   def checkDie(self,position):
     x,y = position
     for index,agent in enumerate(self.data.agentStates):
-      if self.data._eaten[index] >= BOMBERMAN_LIFE: continue
+      if self.data._eaten[index] is 0 : continue
       sx,sy = agent.getPosition()
       sx,sy = round(sx),round(sy)
       if manhattanDistance(position,(sx,sy)) <= 0.5:
-        self.data._eaten[index] += 1 
+        self.data._eaten[index] -= 1 
         agent.configuration = agent.start		
 
   def updateBombScore(self):
@@ -251,7 +251,7 @@ class GameState:
   # You shouldn't need to call these directly #
   #############################################
 
-  def __init__( self, prevState = None ):
+  def __init__( self, prevState = None):
     """
     Generates a new state by copying information from its predecessor.
     """
@@ -281,11 +281,11 @@ class GameState:
 
     return str(self.data)
 
-  def initialize( self, layout, numAgents=1000 ):
+  def initialize( self, layout, numAgents=1000 , timeout = 3000, life = 5 ):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    self.data.initialize(layout, numAgents)
+    self.data.initialize(layout, numAgents, timeout, life)
 
 ############################################################################
 #                     THE HIDDEN SECRETS OF PACMAN                         #
@@ -306,17 +306,17 @@ class ClassicGameRules:
   and how the game starts and ends.
   """
   
-  def __init__(self, timeout=30, life = 5):
+  def __init__(self, timeout=3000, life = 5):
     global BOMBERMAN_LIFE
     self.timeout = timeout
     self.BOMBERMAN_LIFE = life
     BOMBERMAN_LIFE = life
 
-  def newGame( self, layout, Agents, display, quiet = False, catchExceptions=False):
+  def newGame( self, layout, Agents, display, quiet = False):
     agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
     initState = GameState()
-    initState.initialize( layout, len(agents) )
-    game = Game(agents, display, self, catchExceptions=catchExceptions)
+    initState.initialize( layout, len(agents) ,self.timeout, self.BOMBERMAN_LIFE)
+    game = Game(agents, display, self)
     game.state = initState
     for position in layout.bomb:
       game.bomb.append((initState.getFramesUntilEnd() - self.BOMB_DURATION, position, None))
@@ -487,10 +487,9 @@ def readCommand( argv ):
                     help=default('How many episodes are training (suppresses output)'), default=0)
   parser.add_option('--frameTime', dest='frameTime', type='float',
                     help=default('Time to delay between frames; <0 means keyboard'), default=0.1)
-  parser.add_option('-c', '--catchExceptions', action='store_true', dest='catchExceptions', 
-                    help='Turns on exception handling and timeouts during games', default=False)
+
   parser.add_option('--timeout', dest='timeout', type='int',
-                    help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
+                    help=default('Maximum length of time an agent can spend computing in a single game'), default=3000)
 					
   parser.add_option('-m', dest='manual', type='int',
                     help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
@@ -548,7 +547,6 @@ def readCommand( argv ):
     args['display'] = graphicsDisplay.PacmanGraphics(options.zoom, frameTime = options.frameTime)
   args['numGames'] = options.numGames
   args['record'] = options.record
-  args['catchExceptions'] = options.catchExceptions
   args['timeout'] = options.timeout
 
   # Special case: recorded games don't use the runGames method or args structure
@@ -610,7 +608,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, agents, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 , life = 5 ):
+def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 ):
   import __main__
   __main__.__dict__['_display'] = display
 
@@ -627,7 +625,7 @@ def runGames( layout, agents, display, numGames, record, numTraining = 0, catchE
     else:
         gameDisplay = display
         rules.quiet = False
-    game = rules.newGame( layout, agents, gameDisplay, beQuiet, catchExceptions)
+    game = rules.newGame( layout, agents, gameDisplay, beQuiet)
     game.run()
     if not beQuiet: games.append(game)
 
