@@ -51,7 +51,7 @@ class AvoidBomberman(Agent):
 
     pos = state.getAgentPosition(self.index)
     successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal]
-    if len(successors) is 0: return random.choice(legals) # FIXME WHAT IS THIS?  WILL THIS EVER HAPPEN?
+    if len(successors) is 0: return random.choice(legals)
     scored = [(self.evaluationFunction(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
     bestScore = min(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
