@@ -43,6 +43,7 @@ from util import manhattanDistance
 import util, layout
 import sys, types, time, random, os
 
+
 ###################################################
 # YOUR INTERFACE TO THE PACMAN WORLD: A GameState #
 ###################################################

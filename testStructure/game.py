@@ -155,6 +155,9 @@ class AgentState:
 
   def getDirection(self):
     return self.configuration.getDirection()	
+
+  def getLeftBombNumber(self):
+    return self.Bomb_Left_Number
 	
   def getBombPower(self):
     return self.POWER_TABLE[self.Bomb_Power]
