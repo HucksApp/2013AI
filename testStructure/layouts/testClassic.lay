@@ -1,11 +1,21 @@
-%%%%%%%%%
-%B BBB 2%
-%B% %B% %
-%BBB BBB%
-%B% % % %
-%B 1 B  %
-%B% % % %
-% BBBBBB%
-% %B%B% %
-%P BB  3%
-%%%%%%%%%
+%%%%%%%%%%%%%%%%%
+%B BBB 3 B BBB 2%
+%B% %B% %B% %B% %
+%BBB BBBBBBB BBB%
+%B% % % %B% % % %
+%BBB B 3 BBB B  %
+%B% % % %B% % % %
+% BBBBBBB BBBBBB%
+% %B%B% % %B%B% %
+%2 BB   B1 BB  4%
+%BB%%B%BBB%B%%BB%
+%B BBB 4BB BBB  %
+%B% %B% %B% %B% %
+%BBB BBBBBBB BBB%
+%B% % %B%B% % % %
+%B 1 BBBBB BBB  %
+%B% % %B%B% % % %
+% BBBBBBB BBBBBB%
+% %B%B% % %B%B% %
+%P BB  3 P BB  4%
+%%%%%%%%%%%%%%%%%

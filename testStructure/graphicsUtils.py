@@ -25,10 +25,8 @@ _canvas_y = None
 _canvas_col = None      # Current colour (set to black below)
 _canvas_tsize = 12
 _canvas_tserifs = 0
-_box = None
-_bomb = None
-_explode = None
-_bomberman = []
+_ImageDict = {}
+
 
 def formatColor(r, g, b):
   return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
@@ -48,7 +46,7 @@ def sleep(secs):
         time.sleep(secs)
     else:
         _root_window.update_idletasks()
-        _root_window.after(int(150*secs), _root_window.quit)
+        _root_window.after(int(1000*secs), _root_window.quit)
         _root_window.mainloop()
 
 def begin_graphics(width=640, height=480, color=formatColor(0, 0, 0), title=None):
@@ -190,38 +188,11 @@ def circle(pos, r, outlineColor, fillColor, endpoints=None, style='pieslice', wi
                               extent=e[1] - e[0], start=e[0], style=style, width=width)
 
 def image(pos, file="../../blueghost.gif"):
+    global _ImageDict
     x, y = pos
-    # img = PhotoImage(file=file)
-    return _canvas.create_image(x, y, image = Tkinter.PhotoImage(file=file), anchor = Tkinter.NW)
-
-def bomberman_image_from(pos, bomberman_index,file="../../blueghost.gif"):
-    global _bomberman
-    if bomberman_index >= len(_bomberman):
-        _bomberman.extend([None for x in range(len(_bomberman),bomberman_index+1)])
-    x, y = pos
-    if _bomberman[bomberman_index] is not None:
-        remove_from_screen(_bomberman[bomberman_index])	
-    _bomberman[bomberman_index] = Tkinter.PhotoImage(file=file)
-    return _canvas.create_image(x, y, image = _bomberman[bomberman_index],anchor=Tkinter.NW)   
-	
-	
-def box_image_from(pos, file="../../blueghost.gif"):
-    global _box
-    x, y = pos
-    if _box is not None:
-        return _canvas.create_image(x,y,image = _box, anchor = Tkinter.NW)
-        #remove_from_screen(_box)	
-    _box = Tkinter.PhotoImage(file=file)
-    return _canvas.create_image(x, y, image = _box,anchor=Tkinter.NW)   
-    
-def bomb_image_from(pos, file="../../blueghost.gif"):
-    global _bomb
-    x, y = pos
-    if _bomb is not None:
-        return _canvas.create_image(x,y,image=_bomb,anchor=Tkinter.NW)
-        #remove_from_screen(_box)	
-    _bomb = Tkinter.PhotoImage(file=file)
-    return _canvas.create_image(x, y, image = _bomb,anchor=Tkinter.NW)   	
+    if not file in _ImageDict:
+        _ImageDict[file] = Tkinter.PhotoImage(file=file)
+    return _canvas.create_image(x, y, image = _ImageDict[file],anchor=Tkinter.NW)
 	
 def refresh():
       _canvas.update_idletasks()
