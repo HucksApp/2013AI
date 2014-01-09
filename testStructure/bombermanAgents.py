@@ -79,7 +79,7 @@ class HungryBomberman(Agent):
     return ret
 
 def scoreEvaluation(state,pos,vec):
-  x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1]) # FIXME HOW ABOUT pos = (5.7, 1.0) & vec = (1.0, 0.0) ?
+  x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
   return state.getBombScore(x,y) + state.getMapScore(x,y)
 
 def hungryEvaluation(nstate, oldpos, agentIdx):
