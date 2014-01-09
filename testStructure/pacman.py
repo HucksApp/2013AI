@@ -164,7 +164,7 @@ class GameState:
     return self.data.map.isWall((x,y))
 
   def isLose( self ):
-    return self.getNumAgents() == 1 and self.data._eaten[0] == 0
+    return (self.getNumAgents() == 1 and self.data._eaten[0] == 0) or (self.data._eaten.count(0) == self.getNumAgents())
 
   def isWin( self ):
     return ( self.getNumAgents()!=1 and self.data._eaten.count(0) is self.getNumAgents()-1 ) 
@@ -338,7 +338,7 @@ class ClassicGameRules:
   and how the game starts and ends.
   """
   
-  def __init__(self, timeout=3000, life = 5):
+  def __init__(self, timeout=3000, life = 5 , team_mode = False):
     global BOMBERMAN_LIFE
     self.timeout = timeout
     self.BOMBERMAN_LIFE = life
@@ -423,7 +423,9 @@ class BombermanRules:
     legal = BombermanRules.getLegalActions( state, index)
     if action not in legal:
       print ("Illegal action " + str(action) + " with agentIndex " + str(index) + ' and legals:' + str(legal))
-      action = random.choice(legal)
+      #action = random.choice(legal)
+      if Directions.STOP in legal: action = Directions.STOP
+      else : action =random.choice(legal)
 
     agentState = state.data.agentStates[index]
 
@@ -523,6 +525,9 @@ def readCommand( argv ):
 					
   parser.add_option('-m', dest='manual', type='int',
                     help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
+					
+  parser.add_option('--team',dest='team',
+                    help=default('The team competeness mode'), default=False)
 					
   parser.add_option('--life', dest='life', type='int',
                     help=default('The life number of an agent'), default=5)	
