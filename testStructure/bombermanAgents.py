@@ -70,12 +70,16 @@ class HungryBomberman(Agent):
     pos = state.getAgentPosition(self.index)
     successors = [(state.generateSuccessor(self.index, action, True), action) for action in legal]
     if len(successors) is 0: return Directions.STOP
+    if len(successors) is 1: return successors[0][1]
     scored = [(
         hungryEvaluation(nstate, pos, self.index), action
         ) for nstate, action in successors]
+    ###print 'scored=',scored,
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     ret = random.choice(bestActions)
+    ###print ' choose ', ret
+    print
     return ret
 
 def scoreEvaluation(state,pos,vec):
@@ -89,10 +93,21 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
   # Caculate the difference between new and old positions
   # And then caculate the target position
   ox, oy = oldpos
+  # FIXME Bug? getAgentPosition() returns grid position, not float ones...
   nx, ny = nstate.getAgentPosition(agentIdx)
   dx, dy = nx - ox, ny - oy
-  tx = int(ox) if dx == 0 else (int(math.ceil(ox)) if dx > 0 else int(math.floor(ox)))
-  ty = int(oy) if dy == 0 else (int(math.ceil(oy)) if dx > 0 else int(math.floor(oy)))
+
+  #tx = int(ox) if dx == 0 else (int(math.ceil(nx)) if dx > 0 else int(math.floor(nx)))
+  #ty = int(oy) if dy == 0 else (int(math.ceil(ny)) if dx > 0 else int(math.floor(ny)))
+  if dx == 0:
+    tx = int(ox)
+  else:
+    tx = (int(math.ceil(nx)) if dx > 0 else int(math.floor(nx)))
+
+  if dy == 0:
+    ty = int(oy)
+  else:
+    ty = (int(math.ceil(ny)) if dy > 0 else int(math.floor(ny)))
 
   # Items are 1 ~ 9
   #   1 - A - Item add Power
@@ -107,9 +122,9 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
       3: lambda nbomb: (nbomb    ) / 10 }
   agentState = nstate.getAgentState(agentIdx)
   state = {
-      1: agentState.getSpeed(),         # speed 0 ~ 4
-      2: agentState.getBombPower(),     # power 0 ~ 7
-      3: agentState.Bomb_Total_Number } # nbomb 1 ~ 10
+      1: agentState.speed,              # speed 0 ~ 4
+      2: agentState.Bomb_Power,         # power 0 ~ 7
+      3: agentState.Bomb_Total_Number } # nbomb 0 ~ 10
   satisfaction_item_pairs = [(caculator[i](state[i]), i) for i in state]
   satisfaction_order = [item_id for _, item_id in sorted(satisfaction_item_pairs)]
 
@@ -127,12 +142,14 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
 
   queue.append((startpos, 0))
   visited.add(startpos)
+  ###print 'Start BFS',
   while len(queue) != 0:
     (x, y), this_dist = queue.popleft()
     if this_dist > 20: break
     item_id = currmap[x][y]
     if item_id in distances_to_item:
       distances_to_item[item_id].append(this_dist)
+      ###print '(%d, %d)' % (x, y),
     for adjpos in adjacent_positions(x, y):
       if (not currmap.isBlocked(adjpos) and
           adjpos[0] in range(currmap.width) and
@@ -140,6 +157,7 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
           adjpos not in visited):
         queue.append((adjpos, this_dist + 1))
         visited.add(adjpos)
+  ###print 'End BFS'
 
   # Now we have some stuff like these
   #   satisfaction_order = [2, 1, 3]
@@ -154,9 +172,15 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
   for item_id in distances_to_item:
     w = weight[satisfaction_order.index(item_id)]
     for _dist in distances_to_item[item_id]:
-      score += w * (20 - _dist)
+      if _dist == 0:
+        score += 100
+      else:
+        score += w * (20 - _dist)
+  ###print 'distances_to_item=', distances_to_item
 
   overall_ability = sum(state[i] for i in state) # compensation after eating item...
-  ret = score + 30 * overall_ability
+  ret = score + overall_ability * 1000
+  ###print '(ox,oy)=(%1.1f,%1.1f) (nx,ny)=(%1.1f,%1.1f) (tx,ty)=(%d,%d)'%(ox,oy,nx,ny,tx,ty),
+  ###print ' has score=%d'%ret
   return ret
 
