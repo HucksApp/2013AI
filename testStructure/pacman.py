@@ -330,7 +330,6 @@ COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
 
 BOMB_DURATION = 20
-BOMBERMAN_LIFE = 5
 
 class ClassicGameRules:
   """
@@ -342,7 +341,7 @@ class ClassicGameRules:
     global BOMBERMAN_LIFE
     self.timeout = timeout
     self.BOMBERMAN_LIFE = life
-    BOMBERMAN_LIFE = life
+    self.team_mode = team_mode
 
   def newGame( self, layout, Agents, display, quiet = False):
     agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
@@ -583,6 +582,7 @@ def readCommand( argv ):
   args['numGames'] = options.numGames
   args['record'] = options.record
   args['timeout'] = options.timeout
+  args['teamMode'] = options.team
 
   # Special case: recorded games don't use the runGames method or args structure
   if options.gameToReplay != None:
@@ -643,11 +643,11 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 ):
+def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 , teamMode = False ):
   import __main__
   __main__.__dict__['_display'] = display
 
-  rules = ClassicGameRules(timeout,life)
+  rules = ClassicGameRules(timeout,life,teamMode)
   games = []
 
   for i in range( numGames ):
