@@ -277,7 +277,10 @@ class GameState:
 		  
   def calBombScore(self, counter):
     return BOMB_DURATION - (self.getFramesUntilEnd() - counter)
-		
+
+  def getTotalLives(self, indexes):
+    return sum([self.data._eaten[index] for index in indexes])
+	
   #############################################
   #             Helper methods:               #
   # You shouldn't need to call these directly #
@@ -344,10 +347,19 @@ class ClassicGameRules:
     self.team_mode = team_mode
 
   def newGame( self, layout, Agents, display, quiet = False):
-    agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
+    if not self.team_mode:
+      agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
+    else:
+	  teams = Agents
     initState = GameState()
-    initState.initialize( layout, len(agents) ,self.timeout, self.BOMBERMAN_LIFE)
-    game = Game(agents, display, self)
+    if not self.team_mode:
+      initState.initialize( layout, len(agents) ,self.timeout, self.BOMBERMAN_LIFE)
+    else:
+      initState.initialize( layout, sum([team.getNumOfAgents() for team in teams]) ,self.timeout, self.BOMBERMAN_LIFE)
+    if not self.team_mode:
+      game = Game(agents, display, self)
+    else:
+      game = Game(teams,display,self)
     game.state = initState
     for position in layout.bomb:
       game.bomb.append((initState.getFramesUntilEnd() - self.BOMB_DURATION, position, None))
@@ -359,17 +371,24 @@ class ClassicGameRules:
     """
     Checks to see whether it is time to end the game.
     """
-    if state.isWin(): self.win(state, game)
-    if state.isLose(): self.lose(state, game)
+    if self.team_mode:
+      if state.getTotalLives(game.agents[0].agentIndex) == 0:
+        self.lose(state, game)
+      elif sum([state.getTotalLives(team.agentIndex) for team in game.agents[1:]]) == 0:
+        self.win(state, game)
+    else:		
+      if state.isWin(): self.win(state, game)
+      if state.isLose(): self.lose(state, game)
+	  
     if state.getFramesUntilEnd() < 0: game.gameOver = True
 
 
   def win( self, state, game ):
-    if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
+    if not self.quiet: print "Bomberman victorious! Score: %d" % state.data.score
     game.gameOver = True
 
   def lose( self, state, game ):
-    if not self.quiet: print "Pacman died! Score: %d" % state.data.score
+    if not self.quiet: print "Bomberman lose! Score: %d" % state.data.score
     game.gameOver = True
 
   def getProgress(self, game):
@@ -525,8 +544,8 @@ def readCommand( argv ):
   parser.add_option('-m', dest='manual', type='int',
                     help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
 					
-  parser.add_option('--team',dest='team',
-                    help=default('The team competeness mode'), default=False)
+  parser.add_option('-c','--team',dest='team',metavar='TYPE',
+                    help=default('The team competeness mode'), default=None)
 					
   parser.add_option('--life', dest='life', type='int',
                     help=default('The life number of an agent'), default=5)	
@@ -558,15 +577,20 @@ def readCommand( argv ):
     args['agents'] =[ agentType(i) for i in range(options.numAgent)] # Instantiate Pacman with agentArgs
   else:
     args['agents'] = [agentType(0)]
+    
+  if not options.team is None:
+    if options.numAgent%2: raise Exception("For team mode, agents number must be even!")
+    args['teamMode'] = True
+    TeamagentType = loadAgent(options.team, noKeyboard)
+    args['team'] = [TeamagentType(0,args['agents'][0:options.numAgent:2],range(0,options.numAgent,2)), 
+	                 TeamagentType(1,args['agents'][1:options.numAgent:2],range(1,options.numAgent,2))]
+    
+  
   
   # Don't display training games
   if 'numTrain' in agentOpts:
     options.numQuiet = int(agentOpts['numTrain'])
     options.numIgnore = int(agentOpts['numTrain'])
-
-  """ # Choose a ghost agent
-  ghostType = loadAgent(options.ghost, noKeyboard)
-  args['ghosts'] = [ghostType( i+1 ) for i in range( options.numGhosts )] """
 
   # Choose a display format
   if options.quietGraphics:
@@ -582,7 +606,7 @@ def readCommand( argv ):
   args['numGames'] = options.numGames
   args['record'] = options.record
   args['timeout'] = options.timeout
-  args['teamMode'] = options.team
+
 
   # Special case: recorded games don't use the runGames method or args structure
   if options.gameToReplay != None:
@@ -643,7 +667,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 , teamMode = False ):
+def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 , teamMode = False , team = None ):
   import __main__
   __main__.__dict__['_display'] = display
 
@@ -660,7 +684,8 @@ def runGames( layout, agents, display, numGames, record, numTraining = 0, timeou
     else:
         gameDisplay = display
         rules.quiet = False
-    game = rules.newGame( layout, agents, gameDisplay, beQuiet)
+    if teamMode:game = rules.newGame( layout, team, gameDisplay, beQuiet)
+    else: game = rules.newGame( layout, agents, gameDisplay, beQuiet)
     game.run()
     if not beQuiet: games.append(game)
 

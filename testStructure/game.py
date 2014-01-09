@@ -34,21 +34,21 @@ class Agent:
     raiseNotDefined()
 
 class TeamManagerAgent:
-  """
-  An agent must define a getAction method, but may also define the
-  following methods which will be called if they exist:
 
-  def registerInitialState(self, state): # inspects the starting state
-  """
-  def __init__(self, agents, index):
-    self.index = indexes
+  def __init__(self, team_index , agents, index):
+    self.agents = agents
+    self.agentIndex = index
+    self.index = team_index
 
-  def getAction(self, state):
+  def getActions(self, state):
     """
     The Agent will receive a GameState (from either {pacman, capture, sonar}.py) and
     must return an action from Directions.{North, South, East, West, Stop}
     """
-    raiseNotDefined()	
+    raiseNotDefined()
+
+  def getNumOfAgents(self):
+    return len(self.agentIndex)
 	
 class Directions:
   NORTH = 'North'
@@ -514,7 +514,7 @@ class GameStateData:
     self._itemEaten = []
     self._itemDrop = []
     self._blockBroken = []
-    self._fire = [[] for i in range(6)]
+    self._fire = [[] for i in range(9)]
     self._agentMoved = None
     self._lose = False
     self._win = False
@@ -528,7 +528,7 @@ class GameStateData:
     state._blockBroken = self._blockBroken[:]
     state._bombExplode = self._bombExplode[:]
     state._bombLaid = self._bombLaid[:]
-    state._fire = [self._fire[i][:] for i in range(6)]
+    state._fire = [self._fire[i][:] for i in range(9)]
     return state
 
   def copyAgentStates( self, agentStates ):
@@ -636,6 +636,7 @@ class GameStateData:
       else: num += 1
       self.agentStates.append( AgentState( Configuration(pos, Directions.STOP)) )
     self._eaten = [life for a in self.agentStates]
+    print 'len(_eaten):',self._eaten
 
   def initializeMapScore(self):
     for x in range(self.map.width):
@@ -651,7 +652,7 @@ class GameStateData:
     self._itemEaten = []
     self._itemDrop = []
     self._blockBroken = []
-    self._fire = [[] for i in range(6)]
+    self._fire = [[] for i in range(9)]
     self._agentMoved = None
     self._lose = False
     self._win = False
@@ -725,42 +726,55 @@ class Game:
 
     ###self.display.initialize(self.state.makeObservation(1).data)
     # inform learning agents of the game start
+    if not self.rules.team_mode:
+      for i in range(len(self.agents)):
+        agent = self.agents[i]
+        if not agent:
+          self.mute(i)
+          # this is a null agent, meaning it failed to load
+          # the other team wins
+          print "Agent %d failed to load" % i
+          self.unmute()
+          self._agentCrash(i, quiet=True)
+          return
+        if ("registerInitialState" in dir(agent)):
+          self.mute(i)
+          agent.registerInitialState(self.state.deepCopy())
+          ## TODO: could this exceed the total time
+          self.unmute()
 
-    for i in range(len(self.agents)):
-      agent = self.agents[i]
-      if not agent:
-        self.mute(i)
-        # this is a null agent, meaning it failed to load
-        # the other team wins
-        print "Agent %d failed to load" % i
-        self.unmute()
-        self._agentCrash(i, quiet=True)
-        return
-      if ("registerInitialState" in dir(agent)):
-        self.mute(i)
-        agent.registerInitialState(self.state.deepCopy())
-        ## TODO: could this exceed the total time
-        self.unmute()
-
-    numAgents = len( self.agents )
+    
+    if self.rules.team_mode:
+       numTeams = len(self.agents)
+       numAgents = sum([agent.getNumOfAgents() for agent in self.agents])
+    else:
+       numAgents = len( self.agents )
+	   
     actionList = [None for i in range(numAgents)]
 	
     while not self.gameOver:
 
       observation = self.state.deepCopy()
 	  
-      for agentIndex in range(numAgents):
+      for agentIndex in range(len(self.agents)):
         # Fetch the next agent
         agent = self.agents[agentIndex]
   
         # Solicit an action
-        action = None
-        self.mute(agentIndex)
-        if self.state.data._eaten[agentIndex] > 0:
-          action = agent.getAction(observation) 
-        else : action = Directions.STOP
-        self.unmute()
-        actionList[agentIndex] = action
+        if not self.rules.team_mode:
+          action = None
+          self.mute(agentIndex)
+          if self.state.data._eaten[agentIndex] > 0:
+            action = agent.getAction(observation) 
+          else : action = Directions.STOP
+          self.unmute()
+          actionList[agentIndex] = action
+        else:
+          self.mute(agentIndex)
+          actions = agent.getActions(observation)
+          self.unmute()
+          for agent_idx in agent.agentIndex:
+            actionList[agent_idx] = actions[agent_idx]
 		
       # Execute the action
       self.state.updateState(actionList)
