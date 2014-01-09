@@ -57,6 +57,40 @@ class AvoidBomberman(Agent):
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
 
+class TerroristBomberman(Agent):
+  """
+  An agent that perfers to put bombs near blocks
+  """
+  def __init__(self, index=0, *_, **__):
+    self.index = index
+
+  def getAction(self, state):
+    # If there is only one legal action, return it.
+    legal_actions = state.getLegalActions(self.index)
+    if len(legal_actions) == 1:
+      return legal_actions[0]
+
+    # If the list of legal actions containing STOP, remove STOP.
+    if Directions.STOP in legal_actions:
+      legal_actions.remove(Directions.STOP)
+
+    # Generate new states for all legal actions.
+    successors = [(
+        state.generateSuccessor(self.index, action, True), action
+        ) for action in legal_actions]
+
+    # Get scores for all new states.
+    currpos = state.getAgentPosition(self.index)
+    scored = [(
+        terroristEvaluation(newstate, currpos, self.index), action
+        ) for newstate, action in successors]
+
+    # Return one action with the highest score
+    bestScore = max(scored)[0]
+    bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+    ret = random.choice(bestActions)
+    return ret
+
 class HungryBomberman(Agent):
   """
   An agent that perfers to eat items
@@ -187,4 +221,8 @@ def hungryEvaluation(nstate, oldpos, agentIdx):
   ###print '(ox,oy)=(%1.1f,%1.1f) (nx,ny)=(%1.1f,%1.1f) (tx,ty)=(%d,%d)'%(ox,oy,nx,ny,tx,ty),
   ###print ' has score=%d'%ret
   return ret
+
+def terroristEvaluation(nstate, oldpos, agentIdx):
+  # TODO
+  return 0
 
