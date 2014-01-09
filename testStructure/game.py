@@ -155,6 +155,9 @@ class AgentState:
 
   def getDirection(self):
     return self.configuration.getDirection()	
+    
+  def getLeftBombNumber(self):
+    return self.Bomb_Left_Number
 	
   def getBombPower(self):
     return self.POWER_TABLE[self.Bomb_Power]
@@ -488,6 +491,8 @@ class GameStateData:
       self.map = prevState.map.deepCopy()
       self._eaten = prevState._eaten
       self.score = prevState.score
+      self.BombScore = prevState.BombScore
+      self.MapScore = prevState.MapScore
       self.FramesUntilEnd = prevState.FramesUntilEnd
       self.bombs = prevState.bombs
     self._bombLaid = []
@@ -530,6 +535,8 @@ class GameStateData:
     if not self.FramesUntilEnd == other.FramesUntilEnd: return False
     if not self.bombs == other.bombs: return False
     if not self._eaten == other._eaten : return False
+    if not self.BombScore  == other.BombScore: return False
+    if not self.MapScore == other.MapScore : return False
     return True
 
   def __hash__( self ):
@@ -542,7 +549,7 @@ class GameStateData:
       except TypeError, e:
         print e
         #hash(state)
-    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.bombs) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
+    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.BombScore) + 113*hash(self.bombs) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
 
   def __str__( self ):
     width, height = self.map.width, self.map.height
@@ -601,6 +608,9 @@ class GameStateData:
     Creates an initial game state from a layout array (see layout.py).
     """
     self.map = Map(0,0,layout)
+    self.BombScore = Grid(layout.width,layout.height,0)
+    self.MapScore = Grid(layout.width,layout.height,0)
+    self.initializeMapScore()
     self.score = 0
     self.scoreChange = 0
     self.FramesUntilEnd  = 3000
@@ -612,6 +622,14 @@ class GameStateData:
       else: num += 1
       self.agentStates.append( AgentState( Configuration(pos, Directions.STOP)) )
     self._eaten = [0 for a in self.agentStates]
+
+  def initializeMapScore(self):
+    for x in range(self.map.width):
+      for y in range(self.map.height):
+        if not self.map.isBlocked((x,y)):
+          main = [self.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
+          second = [self.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
+          self.MapScore[x][y] += ( main.count(True)*0.5 + second.count(True)*0.4 )
 
 try:
   import boinc
@@ -797,7 +815,7 @@ class Game:
         action = agent.getAction(observation) # the real work code !!!!!
       else : action = Directions.STOP
       self.unmute()
-
+      
       # Execute the action
       #print 'Execute the action:',(time.time()-start)
       self.moveHistory.append( (agentIndex, action) )
