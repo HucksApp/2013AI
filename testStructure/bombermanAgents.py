@@ -45,7 +45,7 @@ class AvoidBomberman(Agent):
     # Generate candidate actions
     legals = state.getLegalActions(self.index)
     #if Directions.STOP in legals: legal .remove(Directions.STOP)
-    legal = [action for action in legals if not action is Directions.STOP]
+    legal = [action for action in legals if not action is Directions.STOP]	
 	
     pos = state.getAgentPosition(self.index)
     successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
@@ -55,6 +55,7 @@ class AvoidBomberman(Agent):
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
   
+
 def scoreEvaluation(state,pos,vec):
   x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
   return state.getBombScore(x,y) + state.getMapScore(x,y)  
