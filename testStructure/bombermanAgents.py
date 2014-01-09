@@ -65,14 +65,18 @@ class HungryBomberman(Agent):
     self.index = index
 
   def getAction(self, state):
-    legals = state.getLegalActions(self.index)
-    legal = [action for action in legals if action is not Actions.LAY and action is not Directions.STOP]
-    pos = state.getAgentPosition(self.index)
-    successors = [(state.generateSuccessor(self.index, action, True), action) for action in legal]
+    legal_actions = state.getLegalActions(self.index)
+    legal_actions = [action for action in legal_actions
+        if action is not Actions.LAY and
+        action is not Directions.STOP]
+    _currpos = state.getAgentPosition(self.index)
+    successors = [(
+        state.generateSuccessor(self.index, action, True), action
+        ) for action in legal_actions]
     if len(successors) is 0: return Directions.STOP
     if len(successors) is 1: return successors[0][1]
     scored = [(
-        hungryEvaluation(nstate, pos, self.index), action
+        hungryEvaluation(nstate, _currpos, self.index), action
         ) for nstate, action in successors]
     ###print 'scored=',scored,
     bestScore = max(scored)[0]
