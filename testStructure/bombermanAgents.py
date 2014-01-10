@@ -70,33 +70,30 @@ class KillBomberman(Agent):
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
   
-  
   def killScore(self,agentstate,state,pos,otherpos,vec,action):
-    x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-    Dis = 0.0
-    Lay = 0.0
-    Attack = False
-    
+        
+    # No target bomberman to attack
     if otherpos == (-1, -1):
-      print '(-1,-1)'
+      if action is Actions.LAY:
+        return -1
       return 0
-    
-    print (x,y)
-    print otherpos
+      
+    x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
     Dist = manhattanDistance((x,y), otherpos)
-    print Dist
 
+    # No bomb for attacking, run!
     if agentstate.getLeftBombNumber() == 0:
-      return Dis
-    
-    if Attack == True and action is Actions.LAY:
-      Lay += 1
-         
-    return Dis + Lay 
-    #return state.getBombScore(x,y) + state.getMapScore(x,y)
+      return Dist
 
+    AttackThreshold = 2
+    # Attack or Trace
+    if Dist <= AttackThreshold and action is Actions.LAY:
+      return 1
+       
+    return -Dist
+         
   def BFSOtherAgent(self, gamestate, pos, otherposint, dict):
-    threshold = 5
+    threshold = 10
     currmap = gamestate.data.map
     targets = []
     queue = deque()
