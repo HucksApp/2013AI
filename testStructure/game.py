@@ -135,7 +135,7 @@ class AgentState:
   AgentStates hold the state of an agent (configuration, speed, scared, etc).
   """
 
-  POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
+  POWER_TABLE = [8,8,8,8,8,8,8, 8]
   SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   

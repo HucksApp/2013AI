@@ -189,7 +189,9 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    fired = [] + self.data._fire[0]+ self.data._fire[1] + self.data._fire[2] + self.data._fire[3] + self.data._fire[4] + self.data._fire[5]
+    fired = []
+    for index in range(len(self.data._fire)):
+      fired += self.data._fire[index]
 	
     if not position in fired:
       self.checkDie(position)
@@ -228,9 +230,9 @@ class GameState:
             self.checkDie(pos)
           elif self.data.map.isBomb(pos):
             self.checkDie(pos)
+            bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-int(BOMB_DURATION/10)) ]
             self.data._fire[i].append(pos)
             fired.append(pos)
-            bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-int(BOMB_DURATION/10)) ]
             if len(bombSweep) is 1:
               bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-int(BOMB_DURATION/10),)+bombSweep[0][1][1:]
                 
@@ -270,10 +272,13 @@ class GameState:
     self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
     for x in range(self.data.map.width):
       for y in range(self.data.map.height):
-        if not self.data.map.isBlocked((x,y)):
+        if not self.data.map.isBlocked((x,y)) or self.data.map.isBomb((x,y)):
           main = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
-          self.data.MapScore[x][y] = ( main.count(True)*0.5 + second.count(True)*0.4 )
+          self.data.MapScore[x][y] = ( main.count(True)*1 + second.count(True)*0.5 )
+          if main.count(True) == 4: self.data.MapScore[x][y] = 100
+          if self.data.map.isBomb((x,y)):
+            self.data.MapScore[x][y] += 1
 		  
   def calBombScore(self, counter):
     return BOMB_DURATION - (self.getFramesUntilEnd() - counter)

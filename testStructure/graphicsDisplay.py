@@ -386,7 +386,6 @@ class PacmanGraphics:
           remove_from_screen(agentImage[index][0])
           agentImage[index] = None
       fireImage = {}
-      
       for f in range(1,int(frames)+1):
         for agentIndex in range(len(pos)):
            if newState._eaten[agentIndex] == 0 and agentImage[agentIndex] is None:continue
