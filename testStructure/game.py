@@ -631,7 +631,7 @@ class GameStateData:
     self.FramesUntilEnd  = timeout
     self.bombs = []
     for bomb in layout.bomb:
-      self.bombs.append((timeout-random.choice([3,5,9,12]), nearestPoint(bomb), 3 , -1))
+      self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:

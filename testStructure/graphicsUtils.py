@@ -193,6 +193,11 @@ def image(pos, file="../../blueghost.gif"):
     if not file in _ImageDict:
         _ImageDict[file] = Tkinter.PhotoImage(file=file)
     return _canvas.create_image(x, y, image = _ImageDict[file],anchor=Tkinter.NW)
+
+def release_image():
+    global _ImageDict
+    _ImageDict.clear()
+
 	
 def refresh():
       _canvas.update_idletasks()

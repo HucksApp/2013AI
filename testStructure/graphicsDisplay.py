@@ -170,7 +170,9 @@ class PacmanGraphics:
     self.frameTime = frameTime
 
   def initialize(self, state, isBlue = False):
+    print 'PacmanGraphics initialize'
     self.isBlue = isBlue
+    release_image()
     self.startGraphics(state)
 
     # self.drawDistributions(state)
