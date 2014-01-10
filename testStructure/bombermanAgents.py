@@ -4,7 +4,9 @@ from game import Directions
 import random
 from util import manhattanDistance
 import util
+from util import nearestPoint
 from collections import deque
+
 
 class BombermanAgent( Agent ):
   def __init__( self, index ):
@@ -49,12 +51,21 @@ class KillBomberman(Agent):
     AgentState = state.getAgentState(self.index)
     AgentPos = state.getAgentPosition(self.index)
     OtherAgentPos = [state.getAgentPosition(index) for index in range(state.getNumAgents()) if index != self.index ]
+    OtherAgentPosInt = [nearestPoint(pos_other) for pos_other in OtherAgentPos]
     
-    print 'Speed: ', AgentState.getSpeed()
-    print 'Power: ', AgentState.getBombPower()
-    print 'Number: ', AgentState.getLeftBombNumber()
+    OtherDict = []
+    for index in range(state.getNumAgents()):
+      if index != self.index:
+        OtherDict.append([nearestPoint(state.getAgentPosition(index)), state.getAgentState(index).getSpeed()])
     
-    scored = [(self.killScore(AgentState,state,AgentPos,OtherAgentPos,Actions.directionToVector(action), action), action) for state, action in successors]
+    # BFS for other agent within the threshold
+    ClosestAgent = self.BFSOtherAgent(state, AgentPos, OtherAgentPosInt, OtherDict)
+    
+    #print 'Speed: ', AgentState.getSpeed()
+    #print 'Power: ', AgentState.getBombPower()
+    #print 'Number: ', AgentState.getLeftBombNumber()
+    
+    scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
@@ -62,17 +73,18 @@ class KillBomberman(Agent):
   
   def killScore(self,agentstate,state,pos,otherpos,vec,action):
     x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-    Threshold = 5
     Dis = 0.0
     Lay = 0.0
     Attack = False
     
+    if otherpos == (-1, -1):
+      print '(-1,-1)'
+      return 0
     
-    # Check if there are other agents close to the agent
-    for OtherPos in otherpos:
-      if manhattanDistance((x,y), OtherPos) < Threshold:
-        Dis += manhattanDistance((x,y), OtherPos)
-        Attack = True 
+    print (x,y)
+    print otherpos
+    Dist = manhattanDistance((x,y), otherpos)
+    print Dist
 
     if agentstate.getLeftBombNumber() == 0:
       return Dis
@@ -83,8 +95,39 @@ class KillBomberman(Agent):
     return Dis + Lay 
     #return state.getBombScore(x,y) + state.getMapScore(x,y)
 
-  def BFSOtherAgent(self):
-  
+  def BFSOtherAgent(self, gamestate, pos, otherposint, dict):
+    threshold = 5
+    currmap = gamestate.data.map
+    targets = []
+    queue = deque()
+    visited = set()
+    depth = {}
+    adjacent_positions = lambda x, y: ((x-1, y), (x+1, y), (x, y-1), (x, y+1))
+    
+    queue.append((nearestPoint(pos), 0))
+    visited.add(nearestPoint(pos))
+    while len(queue) != 0:
+      (x, y), this_dist = queue.popleft()
+      if this_dist > threshold: break
+      if (x, y) in otherposint:
+        targets.append((x, y))
+        depth[(x, y)] = this_dist
+      for adjpos in adjacent_positions(x, y):
+        if (not currmap.isBlocked(adjpos) and
+            adjpos[0] in range(currmap.width) and
+            adjpos[1] in range(currmap.height) and
+            adjpos not in visited):
+          queue.append((adjpos, this_dist + 1))
+          visited.add(adjpos)
+
+    eval = float('inf')
+    min = (-1, -1)
+    for i in range(len(dict)):
+      if dict[i][0] in targets:
+        if depth[dict[i][0]]/dict[i][1] < eval:
+          eval = depth[dict[i][0]]/dict[i][1]
+          min = otherposint[i]
+    return min
 
 class AvoidBomberman(Agent):
   def __init__(self, index = 0 , evalFn="scoreEvaluation"):
