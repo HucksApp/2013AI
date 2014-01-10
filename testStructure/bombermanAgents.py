@@ -61,10 +61,6 @@ class KillBomberman(Agent):
     # BFS for other agent within the threshold
     ClosestAgent = self.BFSOtherAgent(state, AgentPos, OtherAgentPosInt, OtherDict)
     
-    #print 'Speed: ', AgentState.getSpeed()
-    #print 'Power: ', AgentState.getBombPower()
-    #print 'Number: ', AgentState.getLeftBombNumber()
-    
     scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
     bestScore = max(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
@@ -73,17 +69,13 @@ class KillBomberman(Agent):
   def killScore(self,agentstate,state,pos,otherpos,vec,action):
         
     # No target bomberman to attack
-    if otherpos == (-1, -1):
+    if otherpos == (-1, -1) or agentstate.getLeftBombNumber() == 0:
       if action is Actions.LAY:
         return -1
       return 0
       
     x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
     Dist = manhattanDistance((x,y), otherpos)
-
-    # No bomb for attacking, run!
-    if agentstate.getLeftBombNumber() == 0:
-      return Dist
 
     AttackThreshold = 2
     # Attack or Trace
