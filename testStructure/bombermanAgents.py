@@ -61,7 +61,6 @@ class KillBomberman(Agent):
     # BFS for other agent within the threshold
     ClosestAgent = self.BFSOtherAgent(state, AgentPos, OtherAgentPosInt, OtherDict)
     
-    print '======='
     scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
     bestScore = max(scored)[0]
     if bestScore == 0:
