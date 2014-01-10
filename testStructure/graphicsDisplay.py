@@ -488,7 +488,7 @@ class PacmanGraphics:
           dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR[map[xNum][yNum]-1],
+                        fillColor = ITEM_FILL_COLOR[map[x][y]-1],
                         width = 1)
           itemImages[(x,y)] = dot
     return itemImages

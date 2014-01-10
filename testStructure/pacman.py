@@ -83,7 +83,8 @@ class GameState:
     for counter,position,power,index in self.data.bombs:
       if counter == self.getFramesUntilEnd():
         self.bombExplode(self.data.bombs,position,power)
-        self.getAgentState(index).recoverABomb()
+        if index >= 0:
+          self.getAgentState(index).recoverABomb()
     self.data.bombs = [b for b in self.data.bombs if (b[0] != self.getFramesUntilEnd())]
 
     self.updateBombScore()	
@@ -320,7 +321,7 @@ class GameState:
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    self.data.initialize(layout, numAgents, timeout, life)
+    self.data.initialize(layout, numAgents, timeout, life , BOMB_DURATION)
 
 ############################################################################
 #                     THE HIDDEN SECRETS OF PACMAN                         #
@@ -361,8 +362,6 @@ class ClassicGameRules:
     else:
       game = Game(teams,display,self)
     game.state = initState
-    for position in layout.bomb:
-      game.bomb.append((initState.getFramesUntilEnd() - self.BOMB_DURATION, position, None))
     self.initialState = initState.deepCopy()
     self.quiet = quiet
     return game

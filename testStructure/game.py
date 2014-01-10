@@ -617,10 +617,11 @@ class GameStateData:
       return '3'
     return 'E'
 
-  def initialize( self, layout, numAgents , timeout, life ):
+  def initialize( self, layout, numAgents , timeout, life , bomb_Duration ):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
+
     self.map = Map(0,0,layout)
     self.BombScore = Grid(layout.width,layout.height,0)
     self.MapScore = Grid(layout.width,layout.height,0)
@@ -629,6 +630,8 @@ class GameStateData:
     self.scoreChange = 0
     self.FramesUntilEnd  = timeout
     self.bombs = []
+    for bomb in layout.bomb:
+      self.bombs.append((timeout-random.choice([3,5,9,12]), nearestPoint(bomb), 3 , -1))
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:
