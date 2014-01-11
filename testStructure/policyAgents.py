@@ -91,9 +91,19 @@ class KillPolicy(Policy):
     (my_x, my_y) = nearestPoint(self.gamestate.getAgentPosition(self.index))
     originScore = self.gamestate.getBombScore(x,y) + self.gamestate.getMapScore(x,y)
     
-    nstate = gamestate.generateSuccessor(self.index, Actions.LAY, True)
-    
-    layScore = self.evaluationFunction(nstate,(x, y),Actions.directionToVector(Actions.LAY))
+    nstate = self.gamestate.generateSuccessor(self.index, Actions.LAY, True)
+    layScore = self.evaluationFunction(nstate, (x, y), Actions.directionToVector(Actions.LAY))
+    if layScore > originScore:
+      return Actions.LAY
+    else:
+      legals = self.gamestate.getLegalActions(self.index)
+      successors = [(self.gamestate.generateSuccessor(self.index,  action , True), action) for action in legals]
+      if len(successors) is 0: return random.choice(legals)
+      scored = [(self.evaluationFunction(nstate,(x, y),Actions.directionToVector(action)), action) for nstate, action in successors]
+      bestScore = min(scored)[0]
+      bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+      return random.choice(bestActions)
+
 
 class PolicyBomberman(Agent):
   def __init__(self, index = 0 , evalFn="scoreEvaluation"):
