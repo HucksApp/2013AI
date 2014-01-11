@@ -136,7 +136,8 @@ class AgentState:
   """
 
   POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
-  SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
+  #SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
+  SPEED_TABLE = [0.25, 0.33, 0.5, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   
   def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):
