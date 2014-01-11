@@ -88,8 +88,12 @@ class KillPolicy(Policy):
   def getAction(self):
     # return LAY or the direction of tracing
     (x, y) = nearestPoint(self.gamestate.getAgentPosition(self.target))
-    (my_x, my_y) = 
+    (my_x, my_y) = nearestPoint(self.gamestate.getAgentPosition(self.index))
     originScore = self.gamestate.getBombScore(x,y) + self.gamestate.getMapScore(x,y)
+    
+    nstate = gamestate.generateSuccessor(self.index, Actions.LAY, True)
+    
+    layScore = self.evaluationFunction(nstate,(x, y),Actions.directionToVector(Actions.LAY))
 
 class PolicyBomberman(Agent):
   def __init__(self, index = 0 , evalFn="scoreEvaluation"):
