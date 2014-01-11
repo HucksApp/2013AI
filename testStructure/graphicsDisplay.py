@@ -220,6 +220,7 @@ class PacmanGraphics:
     self.agentImages = [] # (agentState, image)
     for index, agent in enumerate(state.agentStates):
       image = self.drawAgent(agent, index)
+      #image = self.drawPacman(agent,index)
       self.agentImages.append( (agent, image) )
     refresh()
 
@@ -293,6 +294,25 @@ class PacmanGraphics:
                    BACKGROUND_COLOR,
                    "CS188 Pacman")
 
+  def drawPacman(self, pacman, index):
+    position = self.getPosition(pacman)
+    screen_point = self.to_screen(position)
+    endpoints = self.getEndpoints(self.getDirection(pacman))
+
+    width = PACMAN_OUTLINE_WIDTH
+    outlineColor = PACMAN_COLOR
+    fillColor = PACMAN_COLOR
+
+    if self.capture:
+      outlineColor = TEAM_COLORS[index % 2]
+      fillColor = GHOST_COLORS[index]
+      width = PACMAN_CAPTURE_OUTLINE_WIDTH
+
+    return [circle(screen_point, PACMAN_SCALE * self.gridSize,
+                   fillColor = fillColor, outlineColor = outlineColor,
+                   endpoints = endpoints,
+                   width = width)]				   
+				   
   def drawAgent(self, pacman, index):
     screen_x,screen_y = self.to_screen(self.getPosition(pacman))
     file = "./image/t%d/Stop1.gif"%(index%2+1)
@@ -376,11 +396,6 @@ class PacmanGraphics:
 
     if self.frameTime > 0.01 or self.frameTime < 0:
       
-      frames = 6.0
-      dir = [self.getDirection(agent) for agent in newState.agentStates]
-      pos = [self.getPosition(prevAgent) for prevAgent,image in self.agentImages]
-      des = [self.getPosition(agent) for agent in newState.agentStates]
-      vec = [((dd[0]-pp[0])/frames,(dd[1]-pp[1])/frames) for pp,dd in zip(pos,des)]
       agentImage = [image for state,image in self.agentImages]
 	  
       for index in range(len(agentImage)):
@@ -389,26 +404,23 @@ class PacmanGraphics:
           agentImage[index] = None
       fireImage = {}
       
-      for f in range(1,int(frames)+1):
-        for agentIndex in range(len(pos)):
-           if newState._eaten[agentIndex] == 0 and agentImage[agentIndex] is None:continue
-           pos[agentIndex] = (pos[agentIndex][0] + vec[agentIndex][0],pos[agentIndex][1] + vec[agentIndex][1])
-           self.moveAgent(pos[agentIndex], dir[agentIndex], agentImage[agentIndex] , f%6+1 , agentIndex)
-        self.addFire(newState._fire[f-1],fireImage)
-        if f == int(frames):
-           self.addFire(newState._fire[6],fireImage)
-           self.addFire(newState._fire[7],fireImage)
-           self.addFire(newState._fire[8],fireImage)
+      for f in range(len(newState._fire)):
+        self.addFire(newState._fire[f],fireImage)
         refresh()
-        sleep(abs(self.frameTime) / frames )
-        #print 'call sleep:',abs(self.frameTime)/frames 
+        if f < 6:
+          sleep(abs(self.frameTime) / len(newState._fire) )
+		
+      for agentIndex,agent in enumerate(newState.agentStates):
+        state,image = self.agentImages[agentIndex]
+        self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
+        self.agentImages[agentIndex] = (agent, image)
 		
       for image in fireImage.values():
         remove_from_screen(image)
       refresh()
-      self.agentImages = zip(newState.agentStates,agentImage)
 	  
     else:  # No animation need !  Direct Move Agents to position and no fire !
+
       for agentIndex,agent in enumerate(newState.agentStates):
         state,image = self.agentImages[agentIndex]
         if newState._eaten[agentIndex] == 0: 
@@ -419,6 +431,7 @@ class PacmanGraphics:
         else: 
             self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
             self.agentImages[agentIndex] = (agent, image)
+	 
     refresh()
 	
   def getPosition(self, agentState):
