@@ -61,19 +61,29 @@ class KillBomberman(Agent):
     # BFS for other agent within the threshold
     ClosestAgent = self.BFSOtherAgent(state, AgentPos, OtherAgentPosInt, OtherDict)
     
-    scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
-    bestScore = max(scored)[0]
-    if bestScore == 0:
-      return random.choice(legals)
+    #ScoreEval = [self.evaluationFunction(nstate,AgentPos,Actions.directionToVector(action)) for nstate, action in successors]
+    #print 'Map and Bomb: ', ScoreEval 
+    
+    if ClosestAgent == (-1, -1) or AgentState.getLeftBombNumber() == 0:
+      scored = [(self.evaluationFunction(nstate,AgentPos,Actions.directionToVector(action)), action) for nstate, action in successors]
+      bestScore = min(scored)[0]
+      print 'No bomb or no target'
+    else:
+      scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
+      bestScore = max(scored)[0]
+      print 'With target'
+      if bestScore == 0:
+        return random.choice(legals)
+    print bestScore
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
   
   def killScore(self,agentstate,state,pos,otherpos,vec,action):      
     # No target bomberman to attack
-    if otherpos == (-1, -1) or agentstate.getLeftBombNumber() == 0:
-      if action is Actions.LAY:
-        return -1
-      return 0
+    #if otherpos == (-1, -1) or agentstate.getLeftBombNumber() == 0:
+      #if action is Actions.LAY:
+        #return -1
+      #return 0
       
     x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
     Dist = manhattanDistance((x,y), otherpos)
@@ -85,7 +95,7 @@ class KillBomberman(Agent):
     return -Dist
          
   def BFSOtherAgent(self, gamestate, pos, otherposint, dict):
-    threshold = 10
+    threshold = 5
     currmap = gamestate.data.map
     targets = []
     queue = deque()
