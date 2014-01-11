@@ -171,6 +171,7 @@ class PacmanGraphics:
 
   def initialize(self, state, isBlue = False):
     self.isBlue = isBlue
+    release_image()
     self.startGraphics(state)
 
     # self.drawDistributions(state)
@@ -375,36 +376,29 @@ class PacmanGraphics:
     if self.frameTime > 0.01 or self.frameTime < 0:
       
       frames = 6.0
-      dir = [self.getDirection(agent) for agent in newState.agentStates]
-      pos = [self.getPosition(prevAgent) for prevAgent,image in self.agentImages]
-      des = [self.getPosition(agent) for agent in newState.agentStates]
-      vec = [((dd[0]-pp[0])/frames,(dd[1]-pp[1])/frames) for pp,dd in zip(pos,des)]
-      agentImage = [image for state,image in self.agentImages]
-	  
-      for index in range(len(agentImage)):
-        if newState._eaten[index] == 0 and not agentImage[index] is None: #and not pos[index] is newState.agentStates[index].start:
-          remove_from_screen(agentImage[index][0])
-          agentImage[index] = None
+
       fireImage = {}
       
-      for f in range(1,int(frames)+1):
-        for agentIndex in range(len(pos)):
-           if newState._eaten[agentIndex] == 0 and agentImage[agentIndex] is None:continue
-           pos[agentIndex] = (pos[agentIndex][0] + vec[agentIndex][0],pos[agentIndex][1] + vec[agentIndex][1])
-           self.moveAgent(pos[agentIndex], dir[agentIndex], agentImage[agentIndex] , f%6+1 , agentIndex)
-        self.addFire(newState._fire[f-1],fireImage)
-        if f == int(frames):
-           self.addFire(newState._fire[6],fireImage)
-           self.addFire(newState._fire[7],fireImage)
-           self.addFire(newState._fire[8],fireImage)
+      for f in range(len(newState._fire)):
+        self.addFire(newState._fire[f],fireImage)
         refresh()
-        sleep(abs(self.frameTime) / frames )
-        #print 'call sleep:',abs(self.frameTime)/frames 
+        if f < frames:
+          sleep(abs(self.frameTime) / frames )
+		  
+      for agentIndex,agent in enumerate(newState.agentStates):
+        state,image = self.agentImages[agentIndex]
+        if newState._eaten[agentIndex] == 0: 
+            if not image is None : 
+                remove_from_screen(image[0])
+            self.agentImages[agentIndex] =(agent, None)
+            continue
+        else: 
+            self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
+            self.agentImages[agentIndex] = (agent, image)
 		
       for image in fireImage.values():
         remove_from_screen(image)
       refresh()
-      self.agentImages = zip(newState.agentStates,agentImage)
 	  
     else:  # No animation need !  Direct Move Agents to position and no fire !
       for agentIndex,agent in enumerate(newState.agentStates):
@@ -471,8 +465,6 @@ class PacmanGraphics:
         if blockMatrix.isBlock((xNum,yNum)): # There's a block here
           pos = (xNum, yNum)
           screen_x, screen_y = self.to_screen(pos)
-          #block = square( screen ,0.5 * self.gridSize,color = blockColor, filled = 1, behind=2)
-          #block = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
           block = image((screen_x-15,screen_y-15), "./image/box.gif")
           imageRow.append(block)
         else:
@@ -483,12 +475,12 @@ class PacmanGraphics:
     itemImages = {}
     for x in range(map.width):
       for y in range(map.height):
-        if map.isItem((x,y)): # There's a bomb here
+        if map.isItem((x,y)): # There's a Item here
           screen_x, screen_y = self.to_screen((x,y))
           dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
                         outlineColor = ITEM_LINE_COLOR,
-                        fillColor = ITEM_FILL_COLOR[map[xNum][yNum]-1],
+                        fillColor = ITEM_FILL_COLOR[map[x][y]-1],
                         width = 1)
           itemImages[(x,y)] = dot
     return itemImages
@@ -499,12 +491,6 @@ class PacmanGraphics:
       for y in range(bombMatrix.height):
         if bombMatrix.isBomb((x,y)): # There's a bomb here
           screen_x, screen_y = self.to_screen((x,y))
-          """dot = circle( (screen_x, screen_y),
-                        BOMB_SIZE * self.gridSize,
-                        outlineColor = BOMB_COLOR,
-                        fillColor = BOMB_COLOR,
-                        width = 1)"""
-          #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
           dot = image((screen_x-15,screen_y-15), "./image/bomb.gif")
           bombImages[(x,y)] = dot
     return bombImages
