@@ -44,6 +44,7 @@ class AvoidBomberman(Agent):
   def getAction(self, state):
     # Generate candidate actions
     legals = state.getLegalActions(self.index)
+    if len(legals) == 1 : return legals[0]
     #if Directions.STOP in legals: legal .remove(Directions.STOP)
     legal = [action for action in legals if not action is Directions.STOP]	
 	
