@@ -44,6 +44,7 @@ class AvoidBomberman(Agent):
   def getAction(self, state):
     # Generate candidate actions
     legals = state.getLegalActions(self.index)
+    if len(legals) == 1 : return legals[0]
     #if Directions.STOP in legals: legal .remove(Directions.STOP)
     legal = [action for action in legals if not action is Directions.STOP]	
 	
@@ -58,4 +59,4 @@ class AvoidBomberman(Agent):
 
 def scoreEvaluation(state,pos,vec):
   x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-  return state.getBombScore(x,y) #+ state.getMapScore(x,y)  
+  return state.getBombScore(x,y) + state.getMapScore(x,y)  
