@@ -67,6 +67,32 @@ class GameState:
   # Accessor methods: use these to access state data #
   ####################################################
 
+  def updateState(self, actions):
+    """
+    Returns the successor state after the actions of all active agents.
+    """
+    # Check that successors exist  
+    if self.isWin() or self.isLose(): raise Exception('it is terminal state now.')
+
+    self.data.clear()
+	
+    for agentIndex in range(len(actions)):
+      if self.data._eaten[agentIndex] > 0:
+        BombermanRules.applyAction( self, actions[agentIndex], agentIndex )
+
+    self.minusOneFrame()
+    for counter,position,power,index in self.data.bombs:
+      if counter == self.getFramesUntilEnd():
+        self.bombExplode(self.data.bombs,position,power)
+        if index >= 0:
+          self.getAgentState(index).recoverABomb()
+    self.data.bombs = [b for b in self.data.bombs if (b[0] != self.getFramesUntilEnd())]
+
+    self.updateBombScore()	
+    self.updateMapScore()
+	
+    self.data.score = self.data._eaten[0]
+
   
   def getLegalActions( self, agentIndex=0 ):
     """
@@ -88,7 +114,7 @@ class GameState:
     # Let agent's logic deal with its action's effects on the board
 
     #state.data._eaten = [False for i in range(state.getNumAgents())]
-    if state.data._eaten[agentIndex] < BOMBERMAN_LIFE:
+    if state.data._eaten[agentIndex] > 0:
       BombermanRules.applyAction( state, action, agentIndex )
 
     if force or ( agentIndex == state.getNumAgents() - 1):
@@ -100,7 +126,7 @@ class GameState:
       state.data.bombs = [b for b in state.data.bombs if (b[0] != state.getFramesUntilEnd())]
 
     state.updateBombScore()	
-    state.updataMapScore()	
+    state.updateMapScore()	
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
 
@@ -140,10 +166,10 @@ class GameState:
     return self.data.map.isWall((x,y))
 
   def isLose( self ):
-    return self.data._lose
+    return (self.getNumAgents() == 1 and self.data._eaten[0] == 0) or (self.data._eaten.count(0) == self.getNumAgents())
 
   def isWin( self ):
-    return ( self.getNumAgents()!=1 and self.data._eaten.count(BOMBERMAN_LIFE) is self.getNumAgents()-1 ) 
+    return ( self.getNumAgents()!=1 and self.data._eaten.count(0) is self.getNumAgents()-1 ) 
 
   def getFramesUntilEnd(self ):
     return self.data.FramesUntilEnd
@@ -165,9 +191,14 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    if not position in self.data._fire:
+    fired = []
+    for i in range(len(self.data._fire)):
+      fired += self.data._fire[i]
+	
+    if not position in fired:
       self.checkDie(position)
-      self.data._fire.append(position)
+      self.data._fire[0].append(position)
+      fired.append(position)
     for vec in [ v for dir, v in Actions._directionsAsList if ( not dir in  [ Actions.LAY ,Directions.STOP])]:
       isbreak = False
       i = 0
@@ -178,15 +209,17 @@ class GameState:
           next_y = int(next_y + dy)
           next_x = int(next_x + dx)
           pos = (next_x,next_y)
-          if pos in self.data._fire: continue
+          if pos in fired: continue
           if self.data.map.isEmpty(pos):
             self.checkDie(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
           elif self.data.map.isBlock(pos):
             isbreak = True
             self.data._blockBroken.append(pos)
             res = self.data.map.remove_object(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             if res != None:
               self.data._itemDrop.append((next_x,next_y,res))
           elif self.data.map.isWall(pos):
@@ -194,11 +227,13 @@ class GameState:
           elif self.data.map.isItem(pos):
             self.data._itemEaten.append(pos)
             self.data.map.remove_object(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             self.checkDie(pos)
           elif self.data.map.isBomb(pos):
             self.checkDie(pos)
-            self.data._fire.append(pos)
+            self.data._fire[i].append(pos)
+            fired.append(pos)
             bombSweep = [(idx,bomb) for idx,bomb in enumerate(bombs) if (pos in bomb ) and (bomb[0] < self.data.FramesUntilEnd-int(BOMB_DURATION/10)) ]
             if len(bombSweep) is 1:
               bombs[bombSweep[0][0]] = (self.data.FramesUntilEnd-int(BOMB_DURATION/10),)+bombSweep[0][1][1:]
@@ -207,11 +242,11 @@ class GameState:
   def checkDie(self,position):
     x,y = position
     for index,agent in enumerate(self.data.agentStates):
-      if self.data._eaten[index] >= BOMBERMAN_LIFE: continue
+      if self.data._eaten[index] is 0 : continue
       sx,sy = agent.getPosition()
       sx,sy = round(sx),round(sy)
       if manhattanDistance(position,(sx,sy)) <= 0.5:
-        self.data._eaten[index] += 1 
+        self.data._eaten[index] -= 1 
         agent.configuration = agent.start		
 
   def updateBombScore(self):
@@ -233,26 +268,31 @@ class GameState:
           if self.data.map.isBlock((next_x,next_y)) or self.data.map.isWall((next_x,next_y)):
             isbreak = True
           else :
-            self.data.BombScore[next_x][next_y] += score
+            self.data.BombScore[next_x][next_y] += score/(i+1)
 
-  def updataMapScore(self):
+  def updateMapScore(self):
     self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
     for x in range(self.data.map.width):
       for y in range(self.data.map.height):
         if not self.data.map.isBlocked((x,y)) or self.data.map.isBomb((x,y)):
           main = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
-          self.data.MapScore[x][y] = ( main.count(True)*0.5 + second.count(True)*0.4 )
+          self.data.MapScore[x][y] = ( main.count(True)*1 + second.count(True)*0.4 )
+          if main.count(True) == 4: self.data.MapScore[x][y] = 100
+          if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
 		  
   def calBombScore(self, counter):
-    return BOMB_DURATION - (self.getFramesUntilEnd() - counter)
-		
+    return 3*(BOMB_DURATION - (self.getFramesUntilEnd() - counter))
+
+  def getTotalLives(self, indexes):
+    return sum([self.data._eaten[index] for index in indexes])
+	
   #############################################
   #             Helper methods:               #
   # You shouldn't need to call these directly #
   #############################################
 
-  def __init__( self, prevState = None ):
+  def __init__( self, prevState = None):
     """
     Generates a new state by copying information from its predecessor.
     """
@@ -282,11 +322,11 @@ class GameState:
 
     return str(self.data)
 
-  def initialize( self, layout, numAgents=1000 ):
+  def initialize( self, layout, numAgents=1000 , timeout = 3000, life = 5 ):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    self.data.initialize(layout, numAgents)
+    self.data.initialize(layout, numAgents, timeout, life , BOMB_DURATION)
 
 ############################################################################
 #                     THE HIDDEN SECRETS OF PACMAN                         #
@@ -299,7 +339,6 @@ COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
 
 BOMB_DURATION = 20
-BOMBERMAN_LIFE = 5
 
 class ClassicGameRules:
   """
@@ -307,20 +346,27 @@ class ClassicGameRules:
   and how the game starts and ends.
   """
   
-  def __init__(self, timeout=30, life = 5):
+  def __init__(self, timeout=3000, life = 5 , team_mode = False):
     global BOMBERMAN_LIFE
     self.timeout = timeout
     self.BOMBERMAN_LIFE = life
-    BOMBERMAN_LIFE = life
+    self.team_mode = team_mode
 
-  def newGame( self, layout, Agents, display, quiet = False, catchExceptions=False):
-    agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
+  def newGame( self, layout, Agents, display, quiet = False):
+    if not self.team_mode:
+      agents = Agents[:layout.getNumAgents()]#[pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
+    else:
+	  teams = Agents
     initState = GameState()
-    initState.initialize( layout, len(agents) )
-    game = Game(agents, display, self, catchExceptions=catchExceptions)
+    if not self.team_mode:
+      initState.initialize( layout, len(agents) ,self.timeout, self.BOMBERMAN_LIFE)
+    else:
+      initState.initialize( layout, sum([team.getNumOfAgents() for team in teams]) ,self.timeout, self.BOMBERMAN_LIFE)
+    if not self.team_mode:
+      game = Game(agents, display, self)
+    else:
+      game = Game(teams,display,self)
     game.state = initState
-    for position in layout.bomb:
-      game.bomb.append((initState.getFramesUntilEnd() - self.BOMB_DURATION, position, None))
     self.initialState = initState.deepCopy()
     self.quiet = quiet
     return game
@@ -329,17 +375,24 @@ class ClassicGameRules:
     """
     Checks to see whether it is time to end the game.
     """
-    if state.isWin(): self.win(state, game)
-    if state.isLose(): self.lose(state, game)
+    if self.team_mode:
+      if state.getTotalLives(game.agents[0].agentIndex) == 0:
+        self.lose(state, game)
+      elif sum([state.getTotalLives(team.agentIndex) for team in game.agents[1:]]) == 0:
+        self.win(state, game)
+    else:		
+      if state.isWin(): self.win(state, game)
+      if state.isLose(): self.lose(state, game)
+	  
     if state.getFramesUntilEnd() < 0: game.gameOver = True
 
 
   def win( self, state, game ):
-    if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
+    if not self.quiet: print "Bomberman victorious! Score: %d" % state.data.score
     game.gameOver = True
 
   def lose( self, state, game ):
-    if not self.quiet: print "Pacman died! Score: %d" % state.data.score
+    if not self.quiet: print "Bomberman lose! Score: %d" % state.data.score
     game.gameOver = True
 
   def getProgress(self, game):
@@ -391,14 +444,16 @@ class BombermanRules:
     """
     legal = BombermanRules.getLegalActions( state, index)
     if action not in legal:
-      raise Exception("Illegal action " + str(action) + " with agentIndex " + str(index) + ' and legals:' + str(legal))
+      print ("Illegal action " + str(action) + " with agentIndex " + str(index) + ' and legals:' + str(legal))
+      #action = random.choice(legal)
+      if Directions.STOP in legal: action = Directions.STOP
+      else : action =random.choice(legal)
 
     agentState = state.data.agentStates[index]
 
     # Update Configuration
     vector = Actions.directionToVector( action, agentState.getSpeed() )
     agentState.configuration = agentState.configuration.generateSuccessor( vector )
-    #print 'newPosition:', agentState.configuration.getPosition()
     # Eat
     next = agentState.configuration.getPosition()
     nearest = nearestPoint( next )
@@ -408,9 +463,7 @@ class BombermanRules:
     # Lay bomb
     if action is Actions.LAY:
       state.layABomb(index,nearest)
-      #state.data._bombLaid.append(nearest)
-      #state.data.map.add_bomb(nearest)
-      #state.getAgentState(index).minusABomb()
+	  
   applyAction = staticmethod( applyAction )
 
   def consume( position, state , index):
@@ -488,13 +541,15 @@ def readCommand( argv ):
                     help=default('How many episodes are training (suppresses output)'), default=0)
   parser.add_option('--frameTime', dest='frameTime', type='float',
                     help=default('Time to delay between frames; <0 means keyboard'), default=0.1)
-  parser.add_option('-c', '--catchExceptions', action='store_true', dest='catchExceptions', 
-                    help='Turns on exception handling and timeouts during games', default=False)
+
   parser.add_option('--timeout', dest='timeout', type='int',
-                    help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
+                    help=default('Maximum length of time an agent can spend computing in a single game'), default=3000)
 					
   parser.add_option('-m', dest='manual', type='int',
                     help=default('The index number of the manual agent [or -1 for all AI]'), default=0)
+					
+  parser.add_option('-c','--team',dest='team',metavar='TYPE',
+                    help=default('The team competeness mode'), default=None)
 					
   parser.add_option('--life', dest='life', type='int',
                     help=default('The life number of an agent'), default=5)	
@@ -526,15 +581,20 @@ def readCommand( argv ):
     args['agents'] =[ agentType(i) for i in range(options.numAgent)] # Instantiate Pacman with agentArgs
   else:
     args['agents'] = [agentType(0)]
+    
+  if not options.team is None:
+    if options.numAgent%2: raise Exception("For team mode, agents number must be even!")
+    args['teamMode'] = True
+    TeamagentType = loadAgent(options.team, noKeyboard)
+    args['team'] = [TeamagentType(0,args['agents'][0:options.numAgent:2],range(0,options.numAgent,2)), 
+	                 TeamagentType(1,args['agents'][1:options.numAgent:2],range(1,options.numAgent,2))]
+    
+  
   
   # Don't display training games
   if 'numTrain' in agentOpts:
     options.numQuiet = int(agentOpts['numTrain'])
     options.numIgnore = int(agentOpts['numTrain'])
-
-  """ # Choose a ghost agent
-  ghostType = loadAgent(options.ghost, noKeyboard)
-  args['ghosts'] = [ghostType( i+1 ) for i in range( options.numGhosts )] """
 
   # Choose a display format
   if options.quietGraphics:
@@ -549,8 +609,8 @@ def readCommand( argv ):
     args['display'] = graphicsDisplay.PacmanGraphics(options.zoom, frameTime = options.frameTime)
   args['numGames'] = options.numGames
   args['record'] = options.record
-  args['catchExceptions'] = options.catchExceptions
   args['timeout'] = options.timeout
+
 
   # Special case: recorded games don't use the runGames method or args structure
   if options.gameToReplay != None:
@@ -611,11 +671,11 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, agents, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 , life = 5 ):
+def runGames( layout, agents, display, numGames, record, numTraining = 0, timeout=3000 , life = 5 , teamMode = False , team = None ):
   import __main__
   __main__.__dict__['_display'] = display
 
-  rules = ClassicGameRules(timeout,life)
+  rules = ClassicGameRules(timeout,life,teamMode)
   games = []
 
   for i in range( numGames ):
@@ -628,7 +688,8 @@ def runGames( layout, agents, display, numGames, record, numTraining = 0, catchE
     else:
         gameDisplay = display
         rules.quiet = False
-    game = rules.newGame( layout, agents, gameDisplay, beQuiet, catchExceptions)
+    if teamMode:game = rules.newGame( layout, team, gameDisplay, beQuiet)
+    else: game = rules.newGame( layout, agents, gameDisplay, beQuiet)
     game.run()
     if not beQuiet: games.append(game)
 

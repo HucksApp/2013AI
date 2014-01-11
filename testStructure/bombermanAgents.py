@@ -151,4 +151,4 @@ class AvoidBomberman(Agent):
 
 def scoreEvaluation(state,pos,vec):
   x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-  return state.getBombScore(x,y) + state.getMapScore(x,y)  
+  return state.getBombScore(x,y) #+ state.getMapScore(x,y)  
