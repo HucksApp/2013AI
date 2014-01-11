@@ -83,11 +83,12 @@ class GameState:
     for counter,position,power,index in self.data.bombs:
       if counter == self.getFramesUntilEnd():
         self.bombExplode(self.data.bombs,position,power)
-        self.getAgentState(index).recoverABomb()
+        if index >= 0:
+          self.getAgentState(index).recoverABomb()
     self.data.bombs = [b for b in self.data.bombs if (b[0] != self.getFramesUntilEnd())]
 
     self.updateBombScore()	
-    self.updataMapScore()
+    self.updateMapScore()
 	
     self.data.score = self.data._eaten[0]
 
@@ -124,7 +125,7 @@ class GameState:
       state.data.bombs = [b for b in state.data.bombs if (b[0] != state.getFramesUntilEnd())]
 
     state.updateBombScore()	
-    state.updataMapScore()	
+    state.updateMapScore()	
     # Time passes
     state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
 
@@ -189,7 +190,9 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    fired = [] + self.data._fire[0]+ self.data._fire[1] + self.data._fire[2] + self.data._fire[3] + self.data._fire[4] + self.data._fire[5]
+    fired = [] 
+    for i in len(range(self.data._fire)):
+       fired +=  self.data._fire[i]
 	
     if not position in fired:
       self.checkDie(position)
@@ -264,19 +267,21 @@ class GameState:
           if self.data.map.isBlock((next_x,next_y)) or self.data.map.isWall((next_x,next_y)):
             isbreak = True
           else :
-            self.data.BombScore[next_x][next_y] += score
+            self.data.BombScore[next_x][next_y] += score/(i+1)
 
-  def updataMapScore(self):
+  def updateMapScore(self):
     self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
     for x in range(self.data.map.width):
       for y in range(self.data.map.height):
-        if not self.data.map.isBlocked((x,y)):
+        if not self.data.map.isBlocked((x,y)) or self.data.map.isBomb((x,y)):
           main = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
-          self.data.MapScore[x][y] = ( main.count(True)*0.5 + second.count(True)*0.4 )
+          self.data.MapScore[x][y] = ( main.count(True)*1 + second.count(True)*0.4 )
+          if main.count(True) == 4: self.data.MapScore[x][y] = 100
+          if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
 		  
   def calBombScore(self, counter):
-    return BOMB_DURATION - (self.getFramesUntilEnd() - counter)
+    return 3*(BOMB_DURATION - (self.getFramesUntilEnd() - counter))
 
   def getTotalLives(self, indexes):
     return sum([self.data._eaten[index] for index in indexes])
@@ -320,7 +325,7 @@ class GameState:
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-    self.data.initialize(layout, numAgents, timeout, life)
+    self.data.initialize(layout, numAgents, timeout, life , BOMB_DURATION)
 
 ############################################################################
 #                     THE HIDDEN SECRETS OF PACMAN                         #
@@ -361,8 +366,6 @@ class ClassicGameRules:
     else:
       game = Game(teams,display,self)
     game.state = initState
-    for position in layout.bomb:
-      game.bomb.append((initState.getFramesUntilEnd() - self.BOMB_DURATION, position, None))
     self.initialState = initState.deepCopy()
     self.quiet = quiet
     return game
