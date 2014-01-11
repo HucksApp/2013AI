@@ -67,14 +67,14 @@ class KillBomberman(Agent):
     if ClosestAgent == (-1, -1) or AgentState.getLeftBombNumber() == 0:
       scored = [(self.evaluationFunction(nstate,AgentPos,Actions.directionToVector(action)), action) for nstate, action in successors]
       bestScore = min(scored)[0]
-      print 'No bomb or no target'
+      #print 'No bomb or no target'
     else:
       scored = [(self.killScore(AgentState,state,AgentPos,ClosestAgent,Actions.directionToVector(action), action), action) for state, action in successors]
       bestScore = max(scored)[0]
-      print 'With target'
+      #print 'With target'
       if bestScore == 0:
         return random.choice(legals)
-    print bestScore
+    #print bestScore
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     return random.choice(bestActions)
   
