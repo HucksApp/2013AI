@@ -114,6 +114,7 @@ class Configuration:
 
     Actions are movement vectors.
     """
+    tolerance = 0.05
     x, y= self.pos
     cx,cy = math.ceil(x),math.ceil(y)
     fx,fy = math.floor(x),math.floor(y)
@@ -122,10 +123,10 @@ class Configuration:
 
     if direction == Directions.STOP:
       direction = self.direction # There is no stop direction
-    if ( x+dx > cx and cx > fx and dx > 0) or ( y+dy > cy and cy > fy and dy > 0) :
+    if ( x+dx > cx - tolerance and cx > fx and dx > 0) or ( y+dy > cy - tolerance and cy > fy and dy > 0) :
       return Configuration((cx,cy),direction)
 	  
-    if ( x+dx < fx and cx > fx and dx < 0 ) or ( y+dy < fy and cy > fy and dy < 0) :
+    if ( x+dx < fx + tolerance and cx > fx and dx < 0 ) or ( y+dy < fy + tolerance and cy > fy and dy < 0) :
       return Configuration((fx,fy),direction)
 
     return Configuration((x + dx, y+dy), direction)
@@ -136,7 +137,7 @@ class AgentState:
   """
 
   POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
-  SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
+  SPEED_TABLE = [0.25, 0.3 , 0.5, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   
   def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):

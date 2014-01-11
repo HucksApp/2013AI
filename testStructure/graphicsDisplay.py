@@ -396,12 +396,6 @@ class PacmanGraphics:
 
     if self.frameTime > 0.01 or self.frameTime < 0:
       
-      agentImage = [image for state,image in self.agentImages]
-	  
-      for index in range(len(agentImage)):
-        if newState._eaten[index] == 0 and not agentImage[index] is None: #and not pos[index] is newState.agentStates[index].start:
-          remove_from_screen(agentImage[index][0])
-          agentImage[index] = None
       fireImage = {}
       
       for f in range(len(newState._fire)):
@@ -412,8 +406,14 @@ class PacmanGraphics:
 		
       for agentIndex,agent in enumerate(newState.agentStates):
         state,image = self.agentImages[agentIndex]
-        self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
-        self.agentImages[agentIndex] = (agent, image)
+        if newState._eaten[agentIndex] == 0: 
+            if not image is None : 
+                remove_from_screen(image[0])
+            self.agentImages[agentIndex] =(agent, None)
+            continue
+        else: 
+            self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
+            self.agentImages[agentIndex] = (agent, image)
 		
       for image in fireImage.values():
         remove_from_screen(image)
