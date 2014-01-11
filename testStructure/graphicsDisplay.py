@@ -170,7 +170,6 @@ class PacmanGraphics:
     self.frameTime = frameTime
 
   def initialize(self, state, isBlue = False):
-    print 'PacmanGraphics initialize'
     self.isBlue = isBlue
     release_image()
     self.startGraphics(state)
@@ -220,7 +219,6 @@ class PacmanGraphics:
     self.agentImages = [] # (agentState, image)
     for index, agent in enumerate(state.agentStates):
       image = self.drawAgent(agent, index)
-      #image = self.drawPacman(agent,index)
       self.agentImages.append( (agent, image) )
     refresh()
 
@@ -294,25 +292,6 @@ class PacmanGraphics:
                    BACKGROUND_COLOR,
                    "CS188 Pacman")
 
-  def drawPacman(self, pacman, index):
-    position = self.getPosition(pacman)
-    screen_point = self.to_screen(position)
-    endpoints = self.getEndpoints(self.getDirection(pacman))
-
-    width = PACMAN_OUTLINE_WIDTH
-    outlineColor = PACMAN_COLOR
-    fillColor = PACMAN_COLOR
-
-    if self.capture:
-      outlineColor = TEAM_COLORS[index % 2]
-      fillColor = GHOST_COLORS[index]
-      width = PACMAN_CAPTURE_OUTLINE_WIDTH
-
-    return [circle(screen_point, PACMAN_SCALE * self.gridSize,
-                   fillColor = fillColor, outlineColor = outlineColor,
-                   endpoints = endpoints,
-                   width = width)]				   
-				   
   def drawAgent(self, pacman, index):
     screen_x,screen_y = self.to_screen(self.getPosition(pacman))
     file = "./image/t%d/Stop1.gif"%(index%2+1)
@@ -396,14 +375,16 @@ class PacmanGraphics:
 
     if self.frameTime > 0.01 or self.frameTime < 0:
       
+      frames = 6.0
+
       fireImage = {}
       
       for f in range(len(newState._fire)):
         self.addFire(newState._fire[f],fireImage)
         refresh()
-        if f < 6:
-          sleep(abs(self.frameTime) / len(newState._fire) )
-		
+        if f < frames:
+          sleep(abs(self.frameTime) / frames )
+		  
       for agentIndex,agent in enumerate(newState.agentStates):
         state,image = self.agentImages[agentIndex]
         if newState._eaten[agentIndex] == 0: 
@@ -420,7 +401,6 @@ class PacmanGraphics:
       refresh()
 	  
     else:  # No animation need !  Direct Move Agents to position and no fire !
-
       for agentIndex,agent in enumerate(newState.agentStates):
         state,image = self.agentImages[agentIndex]
         if newState._eaten[agentIndex] == 0: 
@@ -431,7 +411,6 @@ class PacmanGraphics:
         else: 
             self.moveAgent(self.getPosition(agent), self.getDirection(agent), image , 1 , agentIndex)
             self.agentImages[agentIndex] = (agent, image)
-	 
     refresh()
 	
   def getPosition(self, agentState):
@@ -486,8 +465,6 @@ class PacmanGraphics:
         if blockMatrix.isBlock((xNum,yNum)): # There's a block here
           pos = (xNum, yNum)
           screen_x, screen_y = self.to_screen(pos)
-          #block = square( screen ,0.5 * self.gridSize,color = blockColor, filled = 1, behind=2)
-          #block = box_image_from((screen_x-15,screen_y-15), "./image/box.gif")
           block = image((screen_x-15,screen_y-15), "./image/box.gif")
           imageRow.append(block)
         else:
@@ -498,7 +475,7 @@ class PacmanGraphics:
     itemImages = {}
     for x in range(map.width):
       for y in range(map.height):
-        if map.isItem((x,y)): # There's a bomb here
+        if map.isItem((x,y)): # There's a Item here
           screen_x, screen_y = self.to_screen((x,y))
           dot = circle( (screen_x, screen_y),
                         BOMB_SIZE * self.gridSize,
@@ -514,12 +491,6 @@ class PacmanGraphics:
       for y in range(bombMatrix.height):
         if bombMatrix.isBomb((x,y)): # There's a bomb here
           screen_x, screen_y = self.to_screen((x,y))
-          """dot = circle( (screen_x, screen_y),
-                        BOMB_SIZE * self.gridSize,
-                        outlineColor = BOMB_COLOR,
-                        fillColor = BOMB_COLOR,
-                        width = 1)"""
-          #dot = bomb_image_from((screen_x-15,screen_y-15), "./image/bomb.gif")
           dot = image((screen_x-15,screen_y-15), "./image/bomb.gif")
           bombImages[(x,y)] = dot
     return bombImages

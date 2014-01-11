@@ -190,9 +190,9 @@ class GameState:
     if not self.data.map.isBomb(position): return
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
-    fired = []
-    for i in range(len(self.data._fire)):
-      fired += self.data._fire[i]
+    fired = [] 
+    for i in len(range(self.data._fire)):
+       fired +=  self.data._fire[i]
 	
     if not position in fired:
       self.checkDie(position)

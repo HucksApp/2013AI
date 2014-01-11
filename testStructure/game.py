@@ -137,7 +137,7 @@ class AgentState:
   """
 
   POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
-  SPEED_TABLE = [0.25, 0.3 , 0.5, 1.0]
+  SPEED_TABLE = [0.25, 0.33 , 0.5, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   
   def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):
@@ -618,11 +618,10 @@ class GameStateData:
       return '3'
     return 'E'
 
-  def initialize( self, layout, numAgents , timeout, life , bomb_Duration ):
+  def initialize( self, layout, numAgents , timeout, life , bomb_duration):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-
     self.map = Map(0,0,layout)
     self.BombScore = Grid(layout.width,layout.height,0)
     self.MapScore = Grid(layout.width,layout.height,0)
@@ -632,7 +631,7 @@ class GameStateData:
     self.FramesUntilEnd  = timeout
     self.bombs = []
     for bomb in layout.bomb:
-      self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+       self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:
