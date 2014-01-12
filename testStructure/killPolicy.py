@@ -36,7 +36,7 @@ class KillPolicy(Policy):
       avoidscored = [(self.evaluationFunction(nstate,(enemy_x, enemy_y),Actions.directionToVector(action)), action) for nstate, action in successors]
       bestavoidScore = min(avoidscored)[0]
       print 'BestAvoidScore: ', bestavoidScore
-      if bestavoidScore > 30:
+      if bestavoidScore > 15:
         return False
       self.bestavoidActions = [pair[1] for pair in avoidscored if pair[0] == bestavoidScore]
       return True

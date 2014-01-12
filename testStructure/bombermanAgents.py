@@ -143,7 +143,7 @@ class AvoidBomberman(Agent):
     legal = [action for action in legals if not action is Directions.STOP]
 
     pos = state.getAgentPosition(self.index)
-    successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal]
+    successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legals]
     if len(successors) is 0: return random.choice(legals)
     scored = [(self.evaluationFunction(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
     bestScore = min(scored)[0]

@@ -28,7 +28,8 @@ class SmartPolicyAgent(BasicPolicyAgent):
             ret = random.choice(legals)		
             print cyan('RET1 randomly returns %s' % ret)
             return ret
-        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+            ) for nstate, action in successors]
         bestScore = min(scored)[0]
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
         ret = random.choice(bestActions)		
@@ -66,7 +67,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
             ret = res[1]
             print cyan('RET4 returns %s' % ret)
             return ret
-        elif None in steps:
+        else:
         # there is no path to any items and ability is low or no reachable enemies, need to find a box to lay a bomb (policy)
             print 'should apply Find box policy'
             self.policy = HungryPutBombPolicy(self.index)
@@ -84,19 +85,13 @@ class SmartPolicyAgent(BasicPolicyAgent):
                     ret = random.choice(legals)
                     print cyan('RET6 returns %s' % ret)
                     return ret
-                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+                    ) for nstate, action in successors]
                 bestScore = min(scored)[0]
                 bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
                 ret = random.choice(bestActions)
                 print cyan('RET7 returns %s' % ret)
                 return ret
-                
-        else:
-        # no enemy reachable , ability is full
-            print 'strange situation !!!'
-            ret = random.choice(legals)
-            print cyan('RET8 returns %s' % ret)
-            return ret
             
 
     else:
@@ -143,7 +138,8 @@ class SmartPolicyAgent(BasicPolicyAgent):
                 ret = random.choice(legals)
                 print cyan('RET10 returns %s' % ret)
                 return ret
-            scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
+            scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+                ) for nstate, action in successors]
             bestScore = min(scored)[0]
             bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
             if rev_action in bestActions:
@@ -250,11 +246,14 @@ def BFSForClosestItems(state,index,steps,th= 10):
     frontier.sort(key=lambda x:x[1])
     node = frontier.pop(0)
     if (steps[0] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 1 : # find closest POWER UP
-        steps[0] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[0] = (node[0][0],node[0][1],node[1])
     elif (steps[1] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 2: # find closest SPEED UP
-        steps[1] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[1] = (node[0][0],node[0][1],node[1])
     elif (steps[2] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 3: # find closest NUMBER UP
-        steps[2] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[2] = (node[0][0],node[0][1],node[1])
     elif not None in steps:
         return steps
 		
