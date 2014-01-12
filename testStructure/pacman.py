@@ -281,6 +281,14 @@ class GameState:
           self.data.MapScore[x][y] = ( main.count(True)*1 + second.count(True)*0.4 )
           if main.count(True) == 4: self.data.MapScore[x][y] = 100
           if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
+    for x in range(self.data.map.width):
+      for y in range(self.data.map.height):
+        if self.data.MapScore[x][y] > 3.5 and self.data.MapScore[x][y] < 80:
+          for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]: 
+            if self.data.MapScore[row][col] > 3.5:
+              self.data.MapScore[x][y] = 100
+              self.data.MapScore[row][col] = 100
+            
 		  
   def calBombScore(self, counter):
     if self.getFramesUntilEnd() - 1 == counter:  # next frame would explode
