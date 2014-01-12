@@ -197,7 +197,6 @@ def image(pos, file="../../blueghost.gif"):
 def release_image():
     global _ImageDict
     _ImageDict.clear()
-
 	
 def refresh():
       _canvas.update_idletasks()

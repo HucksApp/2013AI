@@ -114,6 +114,7 @@ class Configuration:
 
     Actions are movement vectors.
     """
+    tolerance = 0.05
     x, y= self.pos
     cx,cy = math.ceil(x),math.ceil(y)
     fx,fy = math.floor(x),math.floor(y)
@@ -122,10 +123,10 @@ class Configuration:
 
     if direction == Directions.STOP:
       direction = self.direction # There is no stop direction
-    if ( x+dx > cx and cx > fx and dx > 0) or ( y+dy > cy and cy > fy and dy > 0) :
+    if ( x+dx > cx - tolerance and cx > fx and dx > 0) or ( y+dy > cy - tolerance and cy > fy and dy > 0) :
       return Configuration((cx,cy),direction)
 	  
-    if ( x+dx < fx and cx > fx and dx < 0 ) or ( y+dy < fy and cy > fy and dy < 0) :
+    if ( x+dx < fx + tolerance and cx > fx and dx < 0 ) or ( y+dy < fy + tolerance and cy > fy and dy < 0) :
       return Configuration((fx,fy),direction)
 
     return Configuration((x + dx, y+dy), direction)
@@ -136,8 +137,7 @@ class AgentState:
   """
 
   POWER_TABLE = [1, 2, 3, 4, 5, 6, 7, 8]
-  #SPEED_TABLE = [0.3, 0.5 , 0.6, 0.75, 1.0]
-  SPEED_TABLE = [0.25, 0.33, 0.5, 1.0]
+  SPEED_TABLE = [0.25, 0.33 , 0.5, 1.0]
   BOMB_NUMBER_LIMITATION = 10
   
   def __init__( self, startConfiguration, speed = 0, N_Bomb = 3 ):
@@ -621,11 +621,10 @@ class GameStateData:
       return '3'
     return 'E'
 
-  def initialize( self, layout, numAgents , timeout, life , bomb_Duration ):
+  def initialize( self, layout, numAgents , timeout, life , bomb_duration):
     """
     Creates an initial game state from a layout array (see layout.py).
     """
-
     self.map = Map(0,0,layout)
     self.BombScore = Grid(layout.width,layout.height,0)
     self.MapScore = Grid(layout.width,layout.height,0)
@@ -635,7 +634,7 @@ class GameStateData:
     self.FramesUntilEnd  = timeout
     self.bombs = []
     for bomb in layout.bomb:
-      self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+       self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:

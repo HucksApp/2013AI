@@ -1,17 +1,17 @@
+from policyAgents import Policy
+from util import *
 from game import Agent
 from game import Actions
 from game import Directions
 import random
-from util import manhattanDistance
-import util
-from util import nearestPoint
 from collections import deque
 import math
 
-"""    
+
 class KillPolicy(Policy):
+
   def __init__(self, index, target, evalFn="scoreEvaluation"):
-    self.evaluationFunction = util.lookup(evalFn, globals())
+    self.evaluationFunction = lookup(evalFn, globals())
     self.index = index
     self.target = target
     
@@ -28,48 +28,10 @@ class KillPolicy(Policy):
     bestScore = min(scored)[0]
     if bestScore == None: 
      return False
-    if mystate.getLeftBombNumber() >= 0 and mystate.getSpeed() >= 0.25:
+    if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 0.25:
       return True
     return False  
-  
-  def generatePolicy(self, gamestate):
-    # return an enemy's agentindex
-    threshold = 10
-    currmap = gamestate.data.map
-    targets = []
-    queue = deque()
-    visited = set()
-    depth = {}
-    adjacent_positions = lambda x, y: ((x-1, y), (x+1, y), (x, y-1), (x, y+1))
-    
-    queue.append((nearestPoint(gamestate.getAgentPosition(self.index)), 0))
-    visited.add(nearestPoint(gamestate.getAgentPosition(self.index)))
-
-    while len(queue) != 0:
-      (x, y), this_dist = queue.popleft()
-      if this_dist > threshold: break
-      for i in range(gamestate.getNumAgents()):
-        if (x, y) == nearestPoint(gamestate.getAgentPosition(i)) and i != self.index:
-          targets.append(i)
-          depth[i] = this_dist    
-      for adjpos in adjacent_positions(x, y):
-        if (not currmap.isBlocked(adjpos) and
-            adjpos[0] in range(currmap.width) and
-            adjpos[1] in range(currmap.height) and
-            adjpos not in visited):
-          queue.append((adjpos, this_dist + 1))
-          visited.add(adjpos)
-
-    eval = float('inf')
-    min = -1
-    for i in range(len(targets)):
-      if depth[targets[i]]/gamestate.getAgentState(targets[i]).getSpeed() < eval:
-        eval = depth[targets[i]]/gamestate.getAgentState(targets[i]).getSpeed()
-        min = targets[i]
-        
-    self.target = min   
-    return min 
-    
+      
   def getActionForPolicy(self, gamestate):
     # return LAY or the direction of tracing
     legals = gamestate.getLegalActions(self.index)
@@ -113,7 +75,7 @@ class KillPolicy(Policy):
     openSet = [[(start,0,Directions.STOP),0]]
     
     g_score = {start:0}
-    f_score = {start:(g_score[start]+util.manhattanDistance(start,target))}
+    f_score = {start:(g_score[start]+manhattanDistance(start,target))}
     while len(openSet):
       openSet.sort(key=lambda x:x[1])
       cur_node = openSet[0]
@@ -126,6 +88,8 @@ class KillPolicy(Policy):
           x,y = cur_node[0][0]
           vec = Actions.directionToVector(action)
           x, y = int(x+vec[0]),int(y+vec[1])
+          if manhattanDistance((x,y),target) <= 0.5:
+              return (cur_node[0][1]+1,cur_node[0][2])
           if not state.data.map.isBlocked((x,y)):
               scoreChange = 1#+(state.data.MapScore[x][y]+state.data.BombScore[x][y])/20
               if cur_node[0][2] == Directions.STOP:
@@ -143,67 +107,6 @@ class KillPolicy(Policy):
                       openSet.append([node,tentative_f])
     return None  
 
- 
-class PolicyAgent(Agent):
-  def __init__(self, index = 0 , evalFn="scoreEvaluation"):
-    self.evaluationFunction = util.lookup(evalFn, globals())
-    self.index = index
-    assert self.evaluationFunction != None
-
-  def getAction(self, state):
-    policy = KillPolicy(self.index, 0)
-    if policy.generatePolicy(state) == -1:
-      legals = state.getLegalActions(self.index)
-      #if Directions.STOP in legals: legal .remove(Directions.STOP)
-      legal = [action for action in legals if not action is Directions.STOP]
-
-      pos = state.getAgentPosition(self.index)
-      successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal]
-      if len(successors) is 0: return random.choice(legals)
-      scored = [(self.evaluationFunction(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
-      bestScore = min(scored)[0]
-      bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-      return random.choice(bestActions)
-   
-    if not policy.isPolicyHolds(state):
-      raise SystemExit
-    return policy.getActionForPolicy(state)
- """ 
-      
-def scoreEvaluation(state,pos,vec):
+def scoreEvaluation(state,pos,vec,weight=1):
   x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-  return state.getBombScore(x,y) + state.getMapScore(x,y)
-
-class PolicyAgent(Agent):
-
-  def __init__(self,index = 0):
-    Agent.__init__(self,index)
-    self.policy = None
-  
-  def getAction(self, state): raiseNotDefined()
-  def getActionByDecisionTree(self, state, legal): raiseNotDefined()
-
-class Policy():
-  def isPolicyHolds(self, state): raiseNotDefined()
-  def generatePolicy(self, state): raiseNotDefined()
-  def getActionForPolicy(self, state): raiseNotDefined()
-
-
-class BasicPolicyAgent(PolicyAgent):
-
-  def getAction(self,state):
-   
-    # in the movement or legals is only one : dont waste time to calculate
-    legals = state.getLegalActions(self.index)
-    if len(legals) == 1 : return legals[0]
-
-    if not self.policy is None:
-        print 'Agent Mode!!!!!!!!!!!!!!!!:  ', self.policy.__class__
-        if self.policy.isPolicyHolds(state):
-            return self.policy.getActionForPolicy(state)
-        else:
-            print 'policy unhold'
-            self.policy = None
-            return self.getActionByDecisionTree(state,legals)
-    else:
-        return self.getActionByDecisionTree(state,legals)
+  return state.getBombScore(x,y) + weight*state.getMapScore(x,y)
