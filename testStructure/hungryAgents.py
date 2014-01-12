@@ -212,22 +212,24 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     return Directions.STOP
 
   def isHungryPutBombConditionHolds(self, state):
-    agentState = nstate.getAgentState(self.index)
+    agentState = state.getAgentState(self.index)
 
     # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
     if agentState.Bomb_Left_Number == 0:
       return False
 
     # 算周圍是否夠安全
+    x, y = state.getAgentPosition(self.index)
+    x, y = int(x), int(y)
     if state.getBombScore(x, y) > 5:
       return False
 
     # 是否能力值不足
-    ability = sum(
+    ability = sum([
         agentState.speed,            # speed 0 ~ 4
         agentState.Bomb_Power,       # power 0 ~ 7
         agentState.Bomb_Total_Number # nbomb 0 ~ 10
-        )
+        ])
     if ability > 10:
       return False
 
@@ -239,6 +241,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     """
     curr_map = state.data.map
     curr_pos = state.getAgentPosition(self.index)
+    bomb_power = state.getAgentState(self.index).Bomb_Power
     queue, visited = deque(), set()
     SEARCH_DEPTH = 10
 
@@ -254,7 +257,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
       # FIXME Check the node here
       # -------------------
       this_dist = this_dist # smaller is better
-      n_reachable = check_reachable(curr_map, bomb_power, (x, y)) # larger is better
+      n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
       score = n_reachable * 3 - this_dist # Configuratble score function
       scored.append((score, (x, y)))
       for adjpos in adjacentCoordinates((x, y)):
@@ -270,7 +273,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     if len(scored) == 0:
       return None
     else:
-      scored = sorted(scored, reversed=True)
+      scored = sorted(scored, reverse=True)
       _score, (x, y) = scored[0]
       return (x, y)
 
@@ -299,6 +302,26 @@ def adjacentCoordinates(current_position):
     x_new_vals = [int(x) - 1, int(x) + 1]
     y_new_vals = [int(y) - 1, int(y) + 1]
   return [(x, y) for x in x_new_vals for y in y_new_vals]
+
+def check_reachable(state, curr_map, bomb_power, pos):
+  curr_map = state.data.map
+  next_pos_functions = [
+      lambda x, y: (x - 1, y),
+      lambda x, y: (x + 1, y),
+      lambda x, y: (x, y - 1),
+      lambda x, y: (x, y + 1)
+  ]
+  reachable = 0
+  for fx in next_pos_functions:
+    x, y = pos
+    counter = bomb_power
+    while counter > 0:
+      x, y = fx(x, y)
+      if currmap.isBlocked((x, y)):
+        if currmap.isBlock((x, y)):
+          reachable += 1
+      counter -= 1
+  return reachable
 
 """
 NOTE:
