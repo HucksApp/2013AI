@@ -1,8 +1,8 @@
 # coding: utf-8
 
-import math
 import random
 from collections import deque
+from math import ceil, floor
 from game import Agent, Actions, Directions
 from policyAgents import PolicyAgent, Policy
 
@@ -46,12 +46,12 @@ class HungryBomberman(Agent):
     if dx == 0:
       tx = int(ox)
     else:
-      tx = (int(math.ceil(nx)) if dx > 0 else int(math.floor(nx)))
+      tx = (int(ceil(nx)) if dx > 0 else int(floor(nx)))
 
     if dy == 0:
       ty = int(oy)
     else:
-      ty = (int(math.ceil(ny)) if dy > 0 else int(math.floor(ny)))
+      ty = (int(ceil(ny)) if dy > 0 else int(floor(ny)))
 
     # Items are 1 ~ 9
     #   1 - A - Item add Power
@@ -128,42 +128,177 @@ class HungryBomberman(Agent):
     ###print ' has score=%d'%ret
     return ret
 
-class HungryPutBomb(Agent):
+class HungryPutBombPolicy(Policy):
+  def isPolicyHolds(self, state): raiseNotDefined()
+  def generatePolicy(self, state): raiseNotDefined()
+  def getActionForPolicy(self, state): raiseNotDefined()
+
+class HungryPutBombPolicyAgent(PolicyAgent):
 
   def __init__(self, index=0, *_, **__):
     self.index = index
+    self.put_bomb_policy = HungryPutBombPolicy()
+    self.targetPutBombPosition = None
 
   def getAction(self, state):
-    if self.isHungryPutBombConditionHolds():
-      if self.targetPutBombPosition != None:
-        # 嘗試去接近那個位置
-        pass
-      else:
-        # 呼叫 hungryWhereToPutBomb() 找一個適合放炸彈的位置
-        # 然後
-        pass
+    if self.isHungryPutBombConditionHolds(state):
+      # FIXME 在哪裡檢查正在執行的 policy 是否已經執行完成了？
+      # eg: 檢查目標位置是否已經有炸彈
+      if self.targetPutBombPosition == None:
+        self.targetPutBombPosition = self.hungryWhereToPutBomb(state)
+      act = self.getActionToPerformPolicy(state)
+      if act == None: # 無法走到目標位置
+        act = Directions.STOP # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
+      print 'The HungryPutBombPolicyAgent.getAction() returns', act
+      raise SystemExit
     else:
-        pass
+      return self.getActionByDecisionTree(state)
 
-  def isHungryPutBombConditionHolds(self):
+  def getActionToPerformPolicy(self, state):
     """
-    Return True or False
+    Return an action that is the first action of shortest path to targetPos by
+    BFS from current pos to targetPos
     """
-    return False
+    curr_map = state.data.map
+    curr_pos = state.getAgentPosition(self.index)
+    target_pos = self.targetPutBombPosition
+    if target_pos == None: return None
+    target_x, target_y = target_pos
+    queue, visited, SEARCH_DEPTH = deque(), set(), 20
+    BOMB_SCORE_SAFE_THRESHOLD = 8
 
-  def hungryWhereToPutBomb(self):
-    """
-    Return a postition
-    """
-    pass
+    first_expanded = True
+    queue.append((curr_pos, 0, None))
+    visited.add(curr_pos)
 
-  def actionToReachPos(self, targetPos):
-    """
-    Return an action that is the shortest path to targetPos
-    by BFS from current pos to targetPos
-    """
-    pass
+    while len(queue) != 0:
+      (x, y), this_dist, first_action = queue.popleft()
+      if this_dist > SEARCH_DEPTH:
+        break
+      if x == target_x and y == target_y:
+        return first_action
 
+      adj_positions = adjacentCoordinates((x, y))
+      adj_actions = []
+      if first_expanded:
+        for (nx, ny) in adj_positions:
+          if nx != x:
+            if nx < x:  adj_actions.append(Directions.WEST)
+            else:       adj_actions.append(Directions.EAST)
+          elif ny != y:
+            if ny < y:  adj_actions.append(Directions.SOUTH)
+            else:       adj_actions.append(Directions.NORTH)
+        for adjpos, act in zip(adj_positions, adj_actions):
+          if (adjpos[0] in range(curr_map.width) and
+              adjpos[1] in range(curr_map.height) and
+              not curr_map.isBlocked(adjpos) and
+              adjpos not in visited):
+            queue.append((adjpos, this_dist + 1, act))
+            visited.add(adjpos)
+        first_expanded = False
+      else:
+        for adjpos in adj_positions:
+          if (adjpos[0] in range(curr_map.width) and
+              adjpos[1] in range(curr_map.height) and
+              not curr_map.isBlocked(adjpos) and
+              adjpos not in visited and
+              state.getBombScore(x, y) <= BOMB_SCORE_SAFE_THRESHOLD):
+            queue.append((adjpos, this_dist + 1, first_action))
+            visited.add(adjpos)
+    return None
+
+  def getActionByDecisionTree(self, state):
+    # TODO
+    return Directions.STOP
+
+  def isHungryPutBombConditionHolds(self, state):
+    agentState = nstate.getAgentState(self.index)
+
+    # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
+    if agentState.Bomb_Left_Number == 0:
+      return False
+
+    # 算周圍是否夠安全
+    if state.getBombScore(x, y) > 5:
+      return False
+
+    # 是否能力值不足
+    ability = sum(
+        agentState.speed,            # speed 0 ~ 4
+        agentState.Bomb_Power,       # power 0 ~ 7
+        agentState.Bomb_Total_Number # nbomb 0 ~ 10
+        )
+    if ability > 10:
+      return False
+
+    return True
+
+  def hungryWhereToPutBomb(self, state):
+    """
+    Return a postition suitable to put a bomb
+    """
+    curr_map = state.data.map
+    curr_pos = state.getAgentPosition(self.index)
+    queue, visited = deque(), set()
+    SEARCH_DEPTH = 10
+
+    first_expanded = True
+    queue.append((curr_pos, 0))
+    visited.add(curr_pos)
+    scored = []
+
+    while len(queue) != 0:
+      (x, y), this_dist = queue.popleft()
+      if this_dist > SEARCH_DEPTH: break
+
+      # FIXME Check the node here
+      # -------------------
+      this_dist = this_dist # smaller is better
+      n_reachable = check_reachable(curr_map, bomb_power, (x, y)) # larger is better
+      score = n_reachable * 3 - this_dist # Configuratble score function
+      scored.append((score, (x, y)))
+      for adjpos in adjacentCoordinates((x, y)):
+        if (adjpos[0] in range(curr_map.width) and
+            adjpos[1] in range(curr_map.height) and
+            not curr_map.isBlocked(adjpos) and
+            adjpos not in visited):
+          queue.append((adjpos, this_dist + 1))
+          visited.add(adjpos)
+
+    # FIXME Compute result here..
+    # -------------------
+    if len(scored) == 0:
+      return None
+    else:
+      scored = sorted(scored, reversed=True)
+      _score, (x, y) = scored[0]
+      return (x, y)
+
+
+def adjacentCoordinates(current_position):
+  """
+  Let's see its effect in examples
+  >>> adjacentCoordinates((3.0, 4))
+  [(2, 3), (2, 5), (4, 3), (4, 5)]
+
+  >>> adjacentCoordinates((3.0, 4.7))
+  [(3, 4), (3, 5)]
+
+  >>> adjacentCoordinates((4.2, 4.0))
+  [(3, 4), (4, 4)]
+
+  """
+  x, y = current_position
+  x1, x2 = int(ceil(x)), int(floor(x))
+  y1, y2 = int(ceil(y)), int(floor(y))
+  x_new_vals = set([x1, x2])
+  y_new_vals = set([y1, y2])
+  if len(x_new_vals) == 2 and len(y_new_vals) == 2:
+    raise Exception('Impossible current_position=%s' % str(current_position))
+  elif len(x_new_vals) == 1 and len(y_new_vals) == 1:
+    x_new_vals = [int(x) - 1, int(x) + 1]
+    y_new_vals = [int(y) - 1, int(y) + 1]
+  return [(x, y) for x in x_new_vals for y in y_new_vals]
 
 """
 NOTE:
