@@ -65,7 +65,15 @@ class SmartPolicyAgent(BasicPolicyAgent):
                 return self.policy.getActionForPolicy(state)
             else:
                 self.policy = None
-                return random.choice(legals)
+                print 'Hungry mode not hold condition'
+                legal = [l for l in legals if l not in [Directions.STOP, Actions.LAY]]
+                successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
+                if len(successors) is 0: return random.choice(legals)
+                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+                bestScore = min(scored)[0]
+                bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+                return random.choice(bestActions)
+                
         else:
         # no enemy reachable , ability is full
             print 'strange situation !!!'
