@@ -141,12 +141,13 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     self.targetPutBombPosition = None
 
   def getAction(self, state):
+    legal_actions = state.getLegalActions(self.index)
     if self.isHungryPutBombConditionHolds(state):
-      # FIXME 在哪裡檢查正在執行的 policy 是否已經執行完成了？
-      # eg: 檢查目標位置是否已經有炸彈
       if self.targetPutBombPosition == None:
         self.targetPutBombPosition = self.hungryWhereToPutBomb(state)
       act = self.getActionToPerformPolicy(state)
+      print '<<< legal_actions=', legal_actions
+      print '>>> act=', act
       if act != None:
         return act
       # 如果 act == None 的話怎麼辦？
@@ -158,12 +159,28 @@ class HungryPutBombPolicyAgent(PolicyAgent):
 
   def getActionToPerformPolicy(self, state):
     """
+    1.
     Return an action that is the first action of shortest path to targetPos by
     BFS from current pos to targetPos
+
+    2.
+    IF the agent is already at targetPos, then put a bomb there if there is not
+    one, and end this policy by setting self.targetPutBombPosition to None.
     """
+    # TODO finish the above feature #2
     curr_map = state.data.map
     curr_pos = state.getAgentPosition(self.index)
-    target_pos = self.targetPutBombPosition
+    target_pos = map(int, self.targetPutBombPosition)
+    if curr_map.isBomb(target_pos):
+      self.targetPutBombPosition = None
+      print '~~~ TAT already has bomb... returns Actions.STOP'
+      return Directions.STOP
+
+    if target_pos[0] == curr_pos[0] and target_pos[1] == curr_pos[1]:
+      self.targetPutBombPosition = None
+      print '~~~ TAT already rreach the location... returns Actions.LAY'
+      return Actions.LAY
+
     print 'getActionToPerformPolicy wants to go to target_pos=',target_pos
     if target_pos == None: return None
     target_x, target_y = target_pos

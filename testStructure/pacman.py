@@ -191,7 +191,7 @@ class GameState:
     self.data._bombExplode.append(position)
     self.data.map.remove_object(position)
     fired = [] 
-    for i in len(range(self.data._fire)):
+    for i in range(len(self.data._fire)):
        fired +=  self.data._fire[i]
 	
     if not position in fired:
