@@ -107,7 +107,29 @@ class SmartPolicyAgent(BasicPolicyAgent):
             # can battle!!
             print 'apply battle mode : KillPolicy'
             self.policy = KillPolicy(self.index,target)
-            ret = self.policy.getActionForPolicy(state)
+            if self.policy.isPolicyHolds(state):
+              ret = self.policy.getActionForPolicy(state)
+            else:
+              print 'just avoid the danger or run away!!'
+              # run away or avoid!!!!
+              rev_action = Actions.reverseDirection(action)
+              #if rev_action in legals:
+              #    return rev_action
+              successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legals] 
+              if len(successors) is 0:
+                  ret = random.choice(legals)
+                  print cyan('RET13 returns %s' % ret)
+                  return ret
+              scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
+              bestScore = min(scored)[0]
+              bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+              if rev_action in bestActions:
+                  ret = rev_action
+                  print cyan('RET14 returns %s' % ret)
+                  return ret
+              ret = random.choice(bestActions)        
+              print cyan('RET15 returns %s' % ret)
+              return ret
             print cyan('RET9 returns %s' % ret)
             return ret
         else:

@@ -25,10 +25,20 @@ class KillPolicy(Policy):
       return False 
     legals = gamestate.getLegalActions(self.index)
     scored = [(self.actualDistance(gamestate, gamestate.getAgentPosition(self.index),self.target,Actions.directionToVector(action)), action) for action in legals]
-    bestScore = min(scored)[0]
-    if bestScore == None: 
-     return False
-    if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 1:
+    scored = [(score, action) for score, action in scored if score != None]
+    if len(scored) == 0: return False
+    self.bestScore = min(scored)[0]
+    if self.bestScore == None: 
+      return False
+    if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 0.25:
+      self.bestActions = [pair[1] for pair in scored if pair[0] == self.bestScore]
+      successors = [(gamestate.generateSuccessor(self.index,  action , True), action) for action in legals]
+      avoidscored = [(self.evaluationFunction(nstate,(enemy_x, enemy_y),Actions.directionToVector(action)), action) for nstate, action in successors]
+      bestavoidScore = min(avoidscored)[0]
+      print 'BestAvoidScore: ', bestavoidScore
+      if bestavoidScore > 30:
+        return False
+      self.bestavoidActions = [pair[1] for pair in avoidscored if pair[0] == bestavoidScore]
       return True
     return False  
       
@@ -40,38 +50,23 @@ class KillPolicy(Policy):
     (x, y) = nearestPoint(gamestate.getAgentPosition(self.target))
     (my_x, my_y) = nearestPoint(gamestate.getAgentPosition(self.index))
     
-    #scored = [(self.manhattanEval(gamestate.getAgentPosition(self.index),
-                                  #gamestate.getAgentPosition(self.target),Actions.directionToVector(action)), action) for action in legals]
-    successors = [(gamestate.generateSuccessor(self.index,  action , True), action) for action in legals]
-    avoidscored = [(self.evaluationFunction(nstate,(x, y),Actions.directionToVector(action)), action) for nstate, action in successors]
-    bestavoidScore = min(avoidscored)[0]
-    bestavoidActions = [pair[1] for pair in avoidscored if pair[0] == bestavoidScore]
-    
-    scored = [(self.actualDistance(gamestate, gamestate.getAgentPosition(self.index),self.target,Actions.directionToVector(action)), action) for action in legals]
-    bestScore = min(scored)[0]
-    bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-
-    if bestScore == 0: return random.choice(bestavoidActions)
+    #if bestScore == None: return random.choice(self.bestActions)
+    if self.bestScore[0] == 0 and Actions.LAY not in legals: return random.choice(self.bestavoidActions)
     
     originScore = gamestate.getBombScore(x,y) + gamestate.getMapScore(x,y)
-    print 'Bomb: ', gamestate.getBombScore(x,y)
-    print 'Map: ', gamestate.getMapScore(x,y)
     if Actions.LAY in legals:
-      print 'pass Actions.LAY in legals...'
       nextstate = gamestate.generateSuccessor(self.index, Actions.LAY, True)
       layScore = nextstate.getBombScore(x,y) + nextstate.getMapScore(x,y)
-      print 'Bomb: ', nextstate.getBombScore(x,y)
-      print 'Map: ', nextstate.getMapScore(x,y)
-      print 'layScore =', layScore
       #layScore = self.evaluationFunction(nstate, (x, y), Actions.directionToVector(Actions.LAY))
     else:
-      return random.choice(bestActions)
-    #print '\033[1;31m  Return!!!  \033[0m'
+      print 'Lay not in legal!!'
+      return random.choice(self.bestavoidActions)
+
     if layScore > originScore and not gamestate.data.map.isBomb((my_x, my_y)):
-      print '\033[1;31m  Lay !!!:  \033[0m', layScore
-      print '\033[1;31m  Ori !!!:  \033[0m', originScore
+      print 'Lay in legal!!'
       return Actions.LAY
-    return random.choice(bestActions)
+    print 'Approach'
+    return random.choice(self.bestActions)
       
   def manhattanEval(self, pos1, pos2, vec):
     mypos = pos1[0]+vec[0], pos1[1]+vec[1]
