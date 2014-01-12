@@ -13,8 +13,9 @@ class HungryPutBombPolicy(Policy):
         self.targetPutBombPosition = None
 
     def isPolicyHolds(self, state):
-        print 'self.targetPutBombPosition is None, hungry policy end'
-        if self.targetPutBombPosition is None: return False
+        if self.targetPutBombPosition is None:
+            print 'self.targetPutBombPosition is None, hungry policy end'
+            return False
 		
         agentState = state.getAgentState(self.index)
 
@@ -91,6 +92,8 @@ class HungryPutBombPolicy(Policy):
         one, and end this policy by setting self.targetPutBombPosition to None.
         """
         # TODO finish the above feature #2
+        if self.targetPutBombPosition is None:
+            return None
         curr_map = state.data.map
         curr_pos = state.getAgentPosition(self.index)
         target_pos = map(int, self.targetPutBombPosition)
@@ -114,7 +117,7 @@ class HungryPutBombPolicy(Policy):
 
         while len(queue) != 0:
             (x, y), this_dist, first_action = queue.popleft()
-            if this_dist > SEARCH_DEPTH:
+            if this_dist >= SEARCH_DEPTH:
                 break
             if x == target_x and y == target_y:
                 return first_action
