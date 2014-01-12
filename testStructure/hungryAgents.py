@@ -154,35 +154,77 @@ class HungryPutBombPolicy(PolicyAgent):
         self.avoidBomberman = AvoidBomberman(index)
         self.hungryBomberman = HungryBomberman()
 
-    def getAction(self, state):
-        print 'HungryPutBombPolicy.getAction() is called'
-        THRESHOLD_BOMB_DANGER = 8
+    def isPolicyHolds(self, state):
+        agentState = state.getAgentState(self.index)
 
-        # If there is only one legal action, just return it.
-        legal_actions = state.getLegalActions(self.index)
-        if len(legal_actions) == 1:
-            return legal_actions[0]
+        # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
+        if agentState.Bomb_Left_Number == 0:
+            return False
 
-        # If the current position is dangerous, use the "AVOID" strategy
-        x, y = map(int, map(round, state.getAgentState(self.index).getPosition()))
-        if state.getBombScore(x, y) > THRESHOLD_BOMB_DANGER:
-            return self.avoidBomberman.getAction(state)
+        # 算周圍是否夠安全
+        x, y = state.getAgentPosition(self.index)
+        x, y = int(x), int(y)
+        if state.getBombScore(x, y) > 5:
+            return False
 
-        # If there are foods, use the "Hungry" strategy to eat them
+        # 是否能力值不足
+        ability = sum([
+                agentState.speed,            # speed 0 ~ 4
+                agentState.Bomb_Power,       # power 0 ~ 7
+                agentState.Bomb_Total_Number # nbomb 0 ~ 10
+                ])
+        if ability > 10:
+            print 'Ability already enough'
+            return False
 
-        # Try to use Put Bomb policy
-        if self.isPolicyHolds(state):
-            if self.targetPutBombPosition == None:
-                self.targetPutBombPosition = self.hungryWhereToPutBomb(state)
-            act = self.getActionForPolicy(state)
-            if act != None:
-                return act
-            # 如果 act == None 的話怎麼辦？
-            # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
+        return True
 
-            ###print 'The HungryPutBombPolicy.getAction() returns', act
-            ###raise SystemExit
-        return self.getActionByDecisionTree(state)
+    def generatePolicy(self, state):
+        """
+        Return a postition suitable to put a bomb
+        """
+        curr_map = state.data.map
+        curr_pos = state.getAgentPosition(self.index)
+        bomb_power = state.getAgentState(self.index).Bomb_Power + 1
+        queue, visited = deque(), set()
+        SEARCH_DEPTH = 10
+        print 'BFS from curr_pos=', curr_pos
+
+        first_expanded = True
+        queue.append((curr_pos, 0))
+        visited.add(curr_pos)
+        scored = []
+
+        while len(queue) != 0:
+            (x, y), this_dist = queue.popleft()
+            if this_dist > SEARCH_DEPTH: break
+
+            # FIXME Check the node here
+            # -------------------
+            this_dist = this_dist # smaller is better
+            n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
+            if n_reachable > 0:
+                print (x, y), "has n_reachable > 0 !!!"
+                score = n_reachable * 3 - this_dist # Configuratble score function
+                scored.append((score, (x, y)))
+
+            for adjpos in adjacentCoordinates((x, y)):
+                if (adjpos[0] in range(curr_map.width) and
+                        adjpos[1] in range(curr_map.height) and
+                        not curr_map.isBlocked(adjpos) and
+                        adjpos not in visited):
+                    queue.append((adjpos, this_dist + 1))
+                    visited.add(adjpos)
+
+        # FIXME Compute result here..
+        # -------------------
+        if len(scored) == 0:
+            return None
+        else:
+            scored = sorted(scored, reverse=True)
+            print scored
+            _score, (x, y) = scored[0]
+            return (x, y)
 
     def getActionForPolicy(self, state):
         """
@@ -259,81 +301,38 @@ class HungryPutBombPolicy(PolicyAgent):
         print 'AFTER BFS...'
         return None
 
-    def getActionByDecisionTree(self, state):
-        # TODO
+    def getAction(self, state):
+        """
+        This is only for testing purpose
+        """
+        print 'HungryPutBombPolicy.getAction() is called'
+        THRESHOLD_BOMB_DANGER = 8
+
+        # If there is only one legal action, just return it.
+        legal_actions = state.getLegalActions(self.index)
+        if len(legal_actions) == 1:
+            return legal_actions[0]
+
+        # If the current position is dangerous, use the "AVOID" strategy
+        x, y = map(int, map(round, state.getAgentState(self.index).getPosition()))
+        if state.getBombScore(x, y) > THRESHOLD_BOMB_DANGER:
+            return self.avoidBomberman.getAction(state)
+
+        # If there are foods, use the "Hungry" strategy to eat them
+
+        # Try to use Put Bomb policy
+        if self.isPolicyHolds(state):
+            if self.targetPutBombPosition == None:
+                self.targetPutBombPosition = self.generatePolicy(state)
+            act = self.getActionForPolicy(state)
+            if act != None:
+                return act
+            # 如果 act == None 的話怎麼辦？
+            # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
+
+            ###print 'The HungryPutBombPolicy.getAction() returns', act
+            ###raise SystemExit
         return Directions.STOP
-
-    def isPolicyHolds(self, state):
-        agentState = state.getAgentState(self.index)
-
-        # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
-        if agentState.Bomb_Left_Number == 0:
-            return False
-
-        # 算周圍是否夠安全
-        x, y = state.getAgentPosition(self.index)
-        x, y = int(x), int(y)
-        if state.getBombScore(x, y) > 5:
-            return False
-
-        # 是否能力值不足
-        ability = sum([
-                agentState.speed,            # speed 0 ~ 4
-                agentState.Bomb_Power,       # power 0 ~ 7
-                agentState.Bomb_Total_Number # nbomb 0 ~ 10
-                ])
-        if ability > 10:
-            print 'Ability already enough'
-            return False
-
-        return True
-
-    def hungryWhereToPutBomb(self, state):
-        """
-        Return a postition suitable to put a bomb
-        """
-        curr_map = state.data.map
-        curr_pos = state.getAgentPosition(self.index)
-        bomb_power = state.getAgentState(self.index).Bomb_Power + 1
-        queue, visited = deque(), set()
-        SEARCH_DEPTH = 10
-        print 'BFS from curr_pos=', curr_pos
-
-        first_expanded = True
-        queue.append((curr_pos, 0))
-        visited.add(curr_pos)
-        scored = []
-
-        while len(queue) != 0:
-            (x, y), this_dist = queue.popleft()
-            if this_dist > SEARCH_DEPTH: break
-
-            # FIXME Check the node here
-            # -------------------
-            this_dist = this_dist # smaller is better
-            n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
-            if n_reachable > 0:
-                print (x, y), "has n_reachable > 0 !!!"
-                score = n_reachable * 3 - this_dist # Configuratble score function
-                scored.append((score, (x, y)))
-
-            for adjpos in adjacentCoordinates((x, y)):
-                if (adjpos[0] in range(curr_map.width) and
-                        adjpos[1] in range(curr_map.height) and
-                        not curr_map.isBlocked(adjpos) and
-                        adjpos not in visited):
-                    queue.append((adjpos, this_dist + 1))
-                    visited.add(adjpos)
-
-        # FIXME Compute result here..
-        # -------------------
-        if len(scored) == 0:
-            return None
-        else:
-            scored = sorted(scored, reverse=True)
-            print scored
-            _score, (x, y) = scored[0]
-            return (x, y)
 
 
 def adjacentCoordinates(current_position):
@@ -395,25 +394,3 @@ def check_reachable(state, curr_map, bomb_power, pos):
             counter -= 1
     return reachable
 
-
-"""
-NOTE:
-
-def isHungryPutBombPolicyConditionHolds()
-    if policy exists: 檢查目標位置是否已經有炸彈
-    是否能力值不足
-    算自己的炸彈是否剩餘
-    周圍夠安全
-    return True / False
-
-def generateHungryPutBombPolicy()
-    回傳一個坐標
-
-
-def getActionForHungryPutBombPolicy()
-    從現在的位置 BFS 走到目標位置為止
-    如果有一條路徑可以 reach target
-    就 return 第一步
-    如果沒有的話就 return None
-
-"""
