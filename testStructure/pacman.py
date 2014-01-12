@@ -267,7 +267,7 @@ class GameState:
           if self.data.map.isBlock((next_x,next_y)) or self.data.map.isWall((next_x,next_y)):
             isbreak = True
           else :
-            self.data.BombScore[next_x][next_y] += score/(i+1)
+            self.data.BombScore[next_x][next_y] += score-i/5.0
 
   def updateMapScore(self):
     self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
@@ -281,6 +281,9 @@ class GameState:
           if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
 		  
   def calBombScore(self, counter):
+    if self.getFramesUntilEnd() - 1 == counter:  # next frame would explode
+		return 100
+		
     return 3*(BOMB_DURATION - (self.getFramesUntilEnd() - counter))
 
   def getTotalLives(self, indexes):

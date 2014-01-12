@@ -3,12 +3,12 @@ from game import Agent
 
 class PolicyAgent(Agent):
 
-  def __init(self,index = 0):
+  def __init__(self,index = 0):
     Agent.__init__(self,index)
     self.policy = None
   
   def getAction(self, state): raiseNotDefined()
-  def getActionByDecisionTree(self, state): raiseNotDefined()
+  def getActionByDecisionTree(self, state, legal): raiseNotDefined()
 
 class Policy():
   def isPolicyHolds(self, state): raiseNotDefined()
@@ -25,11 +25,13 @@ class BasicPolicyAgent(PolicyAgent):
     if len(legals) == 1 : return legals[0]
 
     if not self.policy is None:
-        if self.policy.isPolicyHolds():
-        return self.policy.getActionForPolicy(state)
-		
-	else:
-        getActionByDecisionTree(self, state)
+        if self.policy.isPolicyHolds(state):
+            return self.policy.getActionForPolicy(state)
+        else:
+            self.policy = None
+            return self.getActionByDecisionTree(state,legals)
+    else:
+        return self.getActionByDecisionTree(state,legals)
 
 	
   
