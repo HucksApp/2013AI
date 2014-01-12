@@ -2,8 +2,8 @@ from util import *
 from game import Agent
 from game import Actions
 from game import Directions
-from policyAgents import BasicPolicyAgent
-from policyAgents import Policy
+from policyAgents import *
+from hungryPolicy import HungryPutBombPolicy
 import operator
 
 class SmartPolicyAgent(BasicPolicyAgent):
@@ -11,14 +11,29 @@ class SmartPolicyAgent(BasicPolicyAgent):
   THRESHOLD_TABLE = [12,6,3,2]
   
   ABILITY_THRESHOLD = [4,0.5,6]  # (1~8),(0.25~1),(3~10)
+  
+  DANGER_BOMB_SCORE_THRESHOLD = 36
 
   def getActionByDecisionTree(self,state,legals):
     
 	# BFS for the closest enemy [record the steps and the position index]
+    pos = state.getAgentPosition(self.index)
+    if state.data.BombScore[int(pos[0])][int(pos[1])] > self.DANGER_BOMB_SCORE_THRESHOLD + (state.getAgentState(self.index).getSpeed()-0.25)*5:
+        print 'Current situation contains the danger of bomb explosion'
+        legal = [l for l in legals if l not in [Directions.STOP, Actions.LAY]]
+        successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
+        if len(successors) is 0: return random.choice(legals)
+        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+        bestScore = min(scored)[0]
+        bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+        return random.choice(bestActions)		
+
+    print 'current position is safe without danger'		
     threshold = self.THRESHOLD_TABLE[state.getAgentState(self.index).speed]
     res = BFSForClosestEnemy(state,self.index,threshold)
-    if res is None :
-    # safe 	
+
+    if res is None:
+    # no visable enemies  	
         print 'Safe mode'
         ability = [state.getAgentState(self.index).getBombPower(),state.getAgentState(self.index).getSpeed(),state.getAgentState(self.index).Bomb_Total_Number]
         ishungry = [ (ability[i]-self.ABILITY_THRESHOLD[i])/self.ABILITY_THRESHOLD[i] for i in range(len(self.ABILITY_THRESHOLD))]
@@ -39,35 +54,42 @@ class SmartPolicyAgent(BasicPolicyAgent):
         else:
         # there is no path to any items , need to find a box to lay a bomb (policy)
             print 'should apply Find box policy'
-            pos = state.getAgentPosition(self.index)
+            self.policy = HungryPutBombPolicy(self.index)
+            self.policy.generatePolicy(state)
+            return self.policy.getActionForPolicy(state)
+
+    else:
+    # in first danger mode 
+        target, action, distance = res
+        print 'in first danger mode: dis=',distance
+        if state.getAgentState(self.index).getSpeed() >= state.getAgentState(target).getSpeed() - 0.05 and state.getAgentState(self.index).hasBomb():
+            # can battle!!
+            self.policy = KillPolicy(self.index)
+            self.policy.generatePolicy(state)
+            return self.policy.getActionForPolicy(state)
+        else:
+            # run away or avoid!!!!
+            rev_action = Actions.reverseDirection(action)
+            #if rev_action in legals:
+            #    return rev_action
             successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legals] 
             if len(successors) is 0: return random.choice(legals)
             scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
             bestScore = min(scored)[0]
             bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-            return random.choice(bestActions)	
-    else:
-    # in first danger mode 
-        print 'in first danger mode '
-        pos = state.getAgentPosition(self.index)
-        successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legals] 
-        if len(successors) is 0: return random.choice(legals)
-        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
-        bestScore = min(scored)[0]
-        bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-        print bestActions
-        return random.choice(bestActions)        
+            if rev_action in bestActions: return rev_action
+            return random.choice(bestActions)        
 	
 	
 	
-def scoreEvaluation(state,pos,vec):
+def scoreEvaluation(state,pos,vec,weight=1):
   x,y = int(pos[0]+vec[0]),int(pos[1]+vec[1])
-  return state.getBombScore(x,y) + state.getMapScore(x,y) 
+  return state.getBombScore(x,y) + weight*state.getMapScore(x,y)
 
 	
 class EatItemPolicy(Policy):
 
-  DANGER_BOMB_SCORE_THRESHOLD = 24
+  DANGER_BOMB_SCORE_THRESHOLD = 28
 
   def __init__(self,route,index,target):
     if route is None or len(route) == 0 :
@@ -127,7 +149,7 @@ def BFSForClosestEnemy(state,index,th= 10):
             if (x,y) not in [n[0] for n in frontier]:
                 for t,i in targets:
                     if (x,y) == t:
-                        return (i,node[0][1])
+                        return (i,node[0][1],node[1]+1)
                 if node[0][1] == Directions.STOP:
                  	frontier.append([((x,y),action),node[1]+scoreChange])
                 else :
@@ -140,7 +162,7 @@ def BFSForClosestEnemy(state,index,th= 10):
             if node[1] + 1 > th : continue
             for t,i in targets:
                 if (x,y) == t:
-                    return (i,node[0][1])
+                    return (i,node[0][1],node[1]+1)
             
   print 'not found'
   return None
