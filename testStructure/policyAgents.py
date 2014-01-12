@@ -81,7 +81,8 @@ class KillPolicy(Policy):
     if len(legals) == 1: return legals[0]
     (x, y) = nearestPoint(gamestate.getAgentPosition(self.target))
     (my_x, my_y) = nearestPoint(gamestate.getAgentPosition(self.index))
-    scored = [(self.manhattanEval((my_x,my_y),(x,y),Actions.directionToVector(action)), action) for action in legals]
+    scored = [(self.manhattanEval(gamestate.getAgentPosition(self.index),
+                                  gamestate.getAgentPosition(self.target),Actions.directionToVector(action)), action) for action in legals]
     bestScore = min(scored)[0]
     bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
     originScore = gamestate.getBombScore(x,y) + gamestate.getMapScore(x,y)
@@ -101,7 +102,7 @@ class KillPolicy(Policy):
       return random.choice(bestActions)
       
   def manhattanEval(self, pos1, pos2, vec):
-    mypos = (int(pos1[0]+vec[0]), int(pos1[1]+vec[1]))
+    mypos = pos1[0]+vec[0], pos1[1]+vec[1]
     return manhattanDistance(mypos, pos2)
     
 
@@ -113,6 +114,7 @@ class PolicyBomberman(Agent):
 
   def getAction(self, state):
     policy = KillPolicy(self.index)
+    """
     if policy.generatePolicy(state) == -1:
       legals = state.getLegalActions(self.index)
       #if Directions.STOP in legals: legal .remove(Directions.STOP)
@@ -125,7 +127,7 @@ class PolicyBomberman(Agent):
       bestScore = min(scored)[0]
       bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
       return random.choice(bestActions)
-      
+    """  
     #print policy.isPolicyConditionHolds(state)
     return policy.getAction(state)
     

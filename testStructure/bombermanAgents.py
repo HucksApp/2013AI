@@ -190,7 +190,7 @@ class KillBomberman(Agent):
     return -Dist
          
   def BFSOtherAgent(self, gamestate, pos, otherposint, dict):
-    threshold = 5
+    threshold = 10
     currmap = gamestate.data.map
     targets = []
     queue = deque()
