@@ -54,7 +54,7 @@ class KillPolicy(Policy):
       (x, y), this_dist = queue.popleft()
       if this_dist > threshold: break
       for i in range(gamestate.getNumAgents()):
-        if (x, y) == gamestate.getAgentPosition(i) and i != self.index:
+        if (x, y) == nearestPoint(gamestate.getAgentPosition(i)) and i != self.index:
           targets.append(i)
           depth[i] = this_dist    
       for adjpos in adjacent_positions(x, y):
@@ -114,7 +114,6 @@ class PolicyBomberman(Agent):
 
   def getAction(self, state):
     policy = KillPolicy(self.index)
-    """
     if policy.generatePolicy(state) == -1:
       legals = state.getLegalActions(self.index)
       #if Directions.STOP in legals: legal .remove(Directions.STOP)
@@ -127,7 +126,7 @@ class PolicyBomberman(Agent):
       bestScore = min(scored)[0]
       bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
       return random.choice(bestActions)
-    """  
+    
     #print policy.isPolicyConditionHolds(state)
     return policy.getAction(state)
     
