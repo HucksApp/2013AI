@@ -28,7 +28,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
             ret = random.choice(legals)		
             print cyan('RET1 randomly returns %s' % ret)
             return ret
-        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action), 0.4) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
             ) for nstate, action in successors]
         bestScore = min(scored)[0]
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
