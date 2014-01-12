@@ -146,12 +146,6 @@ class HungryPutBombPolicy(PolicyAgent):
         if agentState.Bomb_Left_Number == 0:
             return False
 
-        # 算周圍是否夠安全
-        x, y = state.getAgentPosition(self.index)
-        x, y = int(x), int(y)
-        if state.getBombScore(x, y) > 5:
-            return False
-
         # 是否能力值不足
         ability = sum([
                 agentState.speed,            # speed 0 ~ 4
@@ -229,10 +223,11 @@ class HungryPutBombPolicy(PolicyAgent):
             self.targetPutBombPosition = None
             return Actions.LAY
 
-        if target_pos == None: return None
+        if target_pos == None:
+            return None
         target_x, target_y = target_pos
         queue, visited, SEARCH_DEPTH = deque(), set(), 20
-        BOMB_SCORE_SAFE_THRESHOLD = 8
+        BOMB_SCORE_SAFE_THRESHOLD = 18
 
         first_expanded = True
         queue.append((curr_pos, 0, None))
