@@ -163,8 +163,14 @@ class HungryPutBombPolicy(Policy):
                 return (x, y+1)
             elif ret_action == Directions.SOUTH:
                 return (x, y-1)
-        next_pos = get_next_pos(curr_pos, ret_action)
-        if state.getBombScore(*next_pos) > 30:
+            else:
+                return None
+        temp = get_next_pos(curr_pos, ret_action)
+        if temp == None:
+            return Directions.STOP
+
+        x, y = temp
+        if state.getBombScore(x, y) > 30:
             print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> STOP'
             return Directions.STOP
         else:
