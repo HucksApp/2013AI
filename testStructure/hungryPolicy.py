@@ -13,17 +13,17 @@ class HungryPutBombPolicy(Policy):
         self.targetPutBombPosition = None
 
     def isPolicyHolds(self, state):
-
-        if self.targetPutBombPosition is None: return False
+        if self.targetPutBombPosition is None:
+            print 'self.targetPutBombPosition is None, hungry policy end'
+            return False
 		
         agentState = state.getAgentState(self.index)
 
-        # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
+        # 算自己�??��??�否?��?, TODO ?�慮?�人距離
         if agentState.Bomb_Left_Number == 0:
             return False
 
-        # 是否能力值不足
-        ability = sum([
+        # ?�否?��??��?�?        ability = sum([
                 agentState.speed,            # speed 0 ~ 4
                 agentState.Bomb_Power,       # power 0 ~ 7
                 agentState.Bomb_Total_Number # nbomb 0 ~ 10
@@ -91,6 +91,8 @@ class HungryPutBombPolicy(Policy):
         one, and end this policy by setting self.targetPutBombPosition to None.
         """
         # TODO finish the above feature #2
+        if self.targetPutBombPosition is None:
+            return None
         curr_map = state.data.map
         curr_pos = state.getAgentPosition(self.index)
         target_pos = map(int, self.targetPutBombPosition)
@@ -114,7 +116,7 @@ class HungryPutBombPolicy(Policy):
 
         while len(queue) != 0:
             (x, y), this_dist, first_action = queue.popleft()
-            if this_dist > SEARCH_DEPTH:
+            if this_dist >= SEARCH_DEPTH:
                 break
             if x == target_x and y == target_y:
                 return first_action
