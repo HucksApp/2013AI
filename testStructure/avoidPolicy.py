@@ -15,6 +15,7 @@ class AvoidPolicy(Policy):
 
   def isPolicyHolds(self, state):
 
+    self.legals = state.getLegalActions(self.index)
     legal = [l for l in self.legals if l not in [Actions.LAY]]
     successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
     if len(successors) is 0: 
@@ -29,11 +30,8 @@ class AvoidPolicy(Policy):
     return False
 
   def getActionForPolicy(self, state):
-    action = None
-    step = 1.0
-    while action is None and step <= 3:
-        action = self.BFSforSafeState(state,self.index,self.SAFE_THRESHOLD*step)
-        step+=0.5
+
+    action = self.BFSforSafeState(state,self.index)
 
     if action is not None:
         print 'BFS found first route by first action:', action
@@ -44,10 +42,10 @@ class AvoidPolicy(Policy):
         bestScore = min(self.scored)[0]
         bestActions = [pair[1] for pair in self.scored if pair[0] == bestScore]
         ret = random.choice(bestActions)
-        print cyan('RETNN randomly returns %s' % ret)
+        print 'RETNN randomly returns ',ret
         return ret        
 	
-  def BFSforSafeState(self,state,index,th = 25, layer = 8):
+  def BFSforSafeState(self,state,index, layer = 8):
   
     start = state  
     queue, visited = deque(), set()
@@ -60,10 +58,10 @@ class AvoidPolicy(Policy):
       if node[1] > layer : continue
       elif node[1] == layer :
         res.append((scoreEvaluation(node[0][0],node[0][0].getAgentPosition(index),(0,0),0.4),node[0][1]))
-	  
-      for action in [l for l in node[0][0].getLegalActions(index) if l is not Actions.LAY]:
+      legals = node[0][0].getLegalActions(index)
+      for action in [l for l in legals if l is not Actions.LAY]:
         nstate = node[0][0].generateSuccessor(index,action,True)
-        if ( not nstate.data._eaten[index] < node[0][0].data._eaten[index] ) and ( nstate not in visited ):
+        if ( not nstate.data._eaten[index] < node[0][0].data._eaten[index] ) and ( nstate not in visited ) and nstate.getFramesUntilEnd() >= 0:
           visited.add(nstate)
           if node[0][1] is None:
            	queue.append([(nstate,action),node[1]+1])
@@ -73,7 +71,7 @@ class AvoidPolicy(Policy):
     if len(res) == 0 : return None
     best = min(res)[0]
     bestActions = [pair[1] for pair in res if pair[0] == best]
-    print  bestActions
+    print  'visited nodes:',len(visited)
     return random.choice(bestActions)
 
 def scoreEvaluation(state,pos,vec,weight=1):
