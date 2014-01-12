@@ -176,6 +176,7 @@ class GameState:
 
   def minusOneFrame( self ):
     self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
+    print util.yellow('~~~~~~~~~~~~   currently, FramesUntilEnd = %d' % self.data.FramesUntilEnd)
     return self.data.FramesUntilEnd
 
   def layABomb(self,agentIndex,pos):
@@ -268,7 +269,7 @@ class GameState:
           if self.data.map.isBlock((next_x,next_y)) or self.data.map.isWall((next_x,next_y)):
             isbreak = True
           else :
-            self.data.BombScore[next_x][next_y] += score-i/5.0
+            self.data.BombScore[next_x][next_y] += score-i*0.37
 
   def updateMapScore(self):
     self.data.MapScore.data = [[0 for y in range(self.data.map.height)] for x in range(self.data.map.width)]
