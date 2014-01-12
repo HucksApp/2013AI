@@ -276,16 +276,6 @@ class HungryPutBombPolicy(PolicyAgent):
         if state.getBombScore(x, y) > 5:
             return False
 
-        # 是否能力值不足
-        ability = sum([
-                agentState.speed,            # speed 0 ~ 4
-                agentState.Bomb_Power,       # power 0 ~ 7
-                agentState.Bomb_Total_Number # nbomb 0 ~ 10
-                ])
-        if ability > 10:
-            print 'Ability already enough'
-            return False
-
         return True
 
     def hungryWhereToPutBomb(self, state):
