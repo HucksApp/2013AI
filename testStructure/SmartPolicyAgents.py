@@ -11,12 +11,12 @@ class SmartPolicyAgent(BasicPolicyAgent):
 
   THRESHOLD_TABLE = [12,6,3,2]
   
-  ABILITY_THRESHOLD = [4.0,0.5,6.0]  # (1~8),(0.25~1),(3~10)
+  ABILITY_THRESHOLD = [4.0,0.5,5.0]  # (1~8),(0.25~1),(3~10)
   
   DANGER_BOMB_SCORE_THRESHOLD = 36
 
   def getActionByDecisionTree(self,state,legals):
-    
+    print '============  getActionByDecisionTree:',self.index,'=============='
 	# BFS for the closest enemy [record the steps and the position index]
     pos = state.getAgentPosition(self.index)
     if state.data.BombScore[int(pos[0])][int(pos[1])] > self.DANGER_BOMB_SCORE_THRESHOLD + (state.getAgentState(self.index).getSpeed()-0.25)*5:
@@ -69,9 +69,11 @@ class SmartPolicyAgent(BasicPolicyAgent):
         print 'in first danger mode: dis=',distance
         if state.getAgentState(self.index).getSpeed() >= state.getAgentState(target).getSpeed() - 0.05 and state.getAgentState(self.index).hasBomb():
             # can battle!!
+            print 'apply battle mode : KillPolicy'
             self.policy = KillPolicy(self.index,target)
             return self.policy.getActionForPolicy(state)
         else:
+            print 'just avoid the danger or run away!!'
             # run away or avoid!!!!
             rev_action = Actions.reverseDirection(action)
             #if rev_action in legals:
@@ -129,9 +131,8 @@ def BFSForClosestEnemy(state,index,th= 10):
 
   targets = []
   for i in range(state.getNumAgents()):
-    if i != index:
+    if i != index and state.data._eaten[i] != 0:
         targets.append((nearestPoint(state.getAgentPosition(i)),i))
-  print 'Agent:',index,'find ',targets
   frontier = [[(start,Directions.STOP),0]]
   _vertex = []
   while not len(frontier) == 0:
@@ -168,7 +169,6 @@ def BFSForClosestEnemy(state,index,th= 10):
                 if (x,y) == t:
                     return (i,node[0][1],node[1]+1)
             
-  print 'not found'
   return None
 
 def BFSForClosestItems(state,index,steps,th= 10):
@@ -205,7 +205,6 @@ def BFSForClosestItems(state,index,steps,th= 10):
                 a = filter(lambda x:frontier[x][0][0] is (x,y) and frontier[x][1] > (scoreChange+node[1]),xrange(len(frontier)))
                 if len(a) > 0:
                     frontier[a[0]] = [((x,y),node[0][1]),(scoreChange+node[1])]
-  print 'not found'
   return steps
   
 def actualDistance(state, pos , target_index , vec = (0,0)):

@@ -19,11 +19,10 @@ class HungryPutBombPolicy(Policy):
 		
         agentState = state.getAgentState(self.index)
 
-        # ç®—è‡ªå·±ç??¸å??¯å¦?©é?, TODO ?ƒæ…®?µäººè·é›¢
         if agentState.Bomb_Left_Number == 0:
             return False
 
-        # ?¯å¦?½å??¼ä?è¶?        ability = sum([
+        ability = sum([
                 agentState.speed,            # speed 0 ~ 4
                 agentState.Bomb_Power,       # power 0 ~ 7
                 agentState.Bomb_Total_Number # nbomb 0 ~ 10
