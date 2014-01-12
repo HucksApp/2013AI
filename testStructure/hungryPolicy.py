@@ -13,7 +13,7 @@ class HungryPutBombPolicy(Policy):
         self.targetPutBombPosition = None
 
     def isPolicyHolds(self, state):
-        print 'self.targetPutBombPosition is None, hungry policy end'
+
         if self.targetPutBombPosition is None: return False
 		
         agentState = state.getAgentState(self.index)

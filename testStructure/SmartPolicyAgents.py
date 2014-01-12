@@ -11,7 +11,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
 
   THRESHOLD_TABLE = [12,6,3,2]
   
-  ABILITY_THRESHOLD = [4,0.5,6]  # (1~8),(0.25~1),(3~10)
+  ABILITY_THRESHOLD = [4.0,0.5,6.0]  # (1~8),(0.25~1),(3~10)
   
   DANGER_BOMB_SCORE_THRESHOLD = 36
 
@@ -39,6 +39,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
         ability = [state.getAgentState(self.index).getBombPower(),state.getAgentState(self.index).getSpeed(),state.getAgentState(self.index).Bomb_Total_Number]
         ishungry = [ (ability[i]-self.ABILITY_THRESHOLD[i])/self.ABILITY_THRESHOLD[i] for i in range(len(self.ABILITY_THRESHOLD))]
         steps = [(lambda x: None if x < 0 else False)(x) for x in ishungry]
+        print steps
       	BFSForClosestItems(state,self.index,steps,threshold)
         if any(steps) :
 		# there is a path to the wanted items
@@ -49,7 +50,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
                     if minCost > ishungry[i]/steps[i][2]: # min(ishungry / steps)
                         target = i 
                         minCost = ishungry[i]/steps[i][2]
-            print 'Chase item:',steps[target]
+            print 'Chase item:',steps[target],'ishungry:',ishungry
             self.policy = EatItemPolicy(steps[target][1],self.index,steps[target][0])
             return self.policy.getActionForPolicy(state)
         else:
@@ -57,7 +58,10 @@ class SmartPolicyAgent(BasicPolicyAgent):
             print 'should apply Find box policy'
             self.policy = HungryPutBombPolicy(self.index)
             self.policy.generatePolicy(state)
-            return self.policy.getActionForPolicy(state)
+            if self.policy.isPolicyHolds(state):
+                return self.policy.getActionForPolicy(state)
+            else:
+                return random.choice(legals)
 
     else:
     # in first danger mode 
@@ -65,8 +69,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
         print 'in first danger mode: dis=',distance
         if state.getAgentState(self.index).getSpeed() >= state.getAgentState(target).getSpeed() - 0.05 and state.getAgentState(self.index).hasBomb():
             # can battle!!
-            self.policy = KillPolicy(self.index)
-            self.policy.generatePolicy(state)
+            self.policy = KillPolicy(self.index,target)
             return self.policy.getActionForPolicy(state)
         else:
             # run away or avoid!!!!

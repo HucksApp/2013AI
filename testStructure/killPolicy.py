@@ -15,12 +15,12 @@ class KillPolicy(Policy):
     self.index = index
     self.target = target
     
-  def isPolicyConditionHolds(self, gamestate):
+  def isPolicyHolds(self, gamestate):
     enemypos = gamestate.getAgentPosition(self.target)
     mypos = gamestate.getAgentPosition(self.index)
     enemystate = gamestate.getAgentState(self.target)
     mystate = gamestate.getAgentState(self.index)
-    if mystate.getLeftBombNumber() >= 2 and mystate.getSpeed() >= 0.33:
+    if mystate.Bomb_Left_Number >= 2 and mystate.getSpeed() >= 0.33:
       return True
     return False  
       
