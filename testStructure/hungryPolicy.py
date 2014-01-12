@@ -1,5 +1,6 @@
 # coding: utf-8
 from policyAgents import Policy
+from util import *
 import random
 from collections import deque
 from math import ceil, floor
@@ -14,27 +15,25 @@ class HungryPutBombPolicy(Policy):
 
     def isPolicyHolds(self, state):
         if self.targetPutBombPosition is None:
-            print 'self.targetPutBombPosition is None, hungry policy end'
+            print red('isPolicyHolds returns False, because no targetPutBombPosition')
             return False
 		
         agentState = state.getAgentState(self.index)
 
-        if state.getBombScore(*map(int, agentState.getPosition())) > 30:
+        x, y = agentState.getPosition()
+        x, y = int(x), int(y)
+        if state.getBombScore(x, y) > 30:
+            print red('isPolicyHolds returns False, because getBombScore > 30')
             return False
 
         if agentState.Bomb_Left_Number == 0:
+            print red('isPolicyHolds returns False, because no bomb left')
             return False
 
-        ability = sum([
-                agentState.speed,            # speed 0 ~ 4
-                agentState.Bomb_Power,       # power 0 ~ 7
-                agentState.Bomb_Total_Number # nbomb 0 ~ 10
-                ])
-        if ability > 10:
-            return False
-
+        print purple('isPolicyHolds returns True')
         return True
 
+    ## FIXME 近距離攻擊, 不要太遠就放炸彈!!!!!!!!!!!!!!!!!!!!
     def generatePolicy(self, state):
         """
         Return a postition suitable to put a bomb

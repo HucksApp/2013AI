@@ -16,20 +16,27 @@ class SmartPolicyAgent(BasicPolicyAgent):
   DANGER_BOMB_SCORE_THRESHOLD = 36
 
   def getActionByDecisionTree(self,state,legals):
-    print '============  getActionByDecisionTree:',self.index,'=============='
+    print blue('\n============ ENTER getActionByDecisionTree: agent #%d =============='% self.index)
 	# BFS for the closest enemy [record the steps and the position index]
     pos = state.getAgentPosition(self.index)
+    print 'agent pos =', pos
     if state.data.BombScore[int(pos[0])][int(pos[1])] > self.DANGER_BOMB_SCORE_THRESHOLD + (state.getAgentState(self.index).getSpeed()-0.25)*5:
-        print 'Current situation contains the danger of bomb explosion'
-        legal = [l for l in legals if l not in [Directions.STOP, Actions.LAY]]
+        print red('>>>>>>> Current situation contains the danger of bomb explosion')
+        legal = [l for l in legals if l not in [Actions.LAY]]
         successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
-        if len(successors) is 0: return random.choice(legals)
-        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+        if len(successors) is 0:
+            ret = random.choice(legals)		
+            print cyan('RET1 randomly returns %s' % ret)
+            return ret
+        scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+            ) for nstate, action in successors]
         bestScore = min(scored)[0]
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-        return random.choice(bestActions)		
+        ret = random.choice(bestActions)		
+        print cyan('RET2 randomly returns %s' % ret)
+        return ret
 
-    print 'current position is safe without danger'		
+    print green('>>>>>>> Current position is safe without danger')
     threshold = self.THRESHOLD_TABLE[state.getAgentState(self.index).speed]
     res = BFSForClosestEnemy(state,self.index,threshold)
 
@@ -52,33 +59,39 @@ class SmartPolicyAgent(BasicPolicyAgent):
                         minCost = ishungry[i]/steps[i][2]
             print 'Chase item:',steps[target],'ishungry:',ishungry
             self.policy = EatItemPolicy(steps[target][1],self.index,steps[target][0])
-            if self.policy.isPolicyHolds(state):
-                return self.policy.getActionForPolicy(state)
+            ret = self.policy.getActionForPolicy(state)
+            print cyan('RET3 By EatItemPolicy, returns %s' % ret)
+            return ret
         elif not ( None in steps or res is None ):
         # ability is full and want to get close to the enemy
-            return res[1]		
-        elif None in steps:
+            ret = res[1]
+            print cyan('RET4 returns %s' % ret)
+            return ret
+        else:
         # there is no path to any items and ability is low or no reachable enemies, need to find a box to lay a bomb (policy)
             print 'should apply Find box policy'
             self.policy = HungryPutBombPolicy(self.index)
             self.policy.generatePolicy(state)
             if self.policy.isPolicyHolds(state):
-                return self.policy.getActionForPolicy(state)
+                ret = self.policy.getActionForPolicy(state)
+                print cyan('RET5 returns %s' % ret)
+                return ret
             else:
                 self.policy = None
                 print 'Hungry mode not hold condition'
                 legal = [l for l in legals if l not in [Actions.LAY]]
                 successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
-                if len(successors) is 0: return random.choice(legals)
-                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+                if len(successors) is 0:
+                    ret = random.choice(legals)
+                    print cyan('RET6 returns %s' % ret)
+                    return ret
+                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+                    ) for nstate, action in successors]
                 bestScore = min(scored)[0]
                 bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-                return random.choice(bestActions)
-                
-        else:
-        # no enemy reachable , ability is full
-            print 'strange situation !!!'
-            return random.choice(legals)
+                ret = random.choice(bestActions)
+                print cyan('RET7 returns %s' % ret)
+                return ret
             
 
     else:
@@ -89,7 +102,9 @@ class SmartPolicyAgent(BasicPolicyAgent):
             # can battle!!
             print 'apply battle mode : KillPolicy'
             self.policy = KillPolicy(self.index,target)
-            return self.policy.getActionForPolicy(state)
+            ret = self.policy.getActionForPolicy(state)
+            print cyan('RET9 returns %s' % ret)
+            return ret
         else:
             print 'just avoid the danger or run away!!'
             # run away or avoid!!!!
@@ -97,12 +112,21 @@ class SmartPolicyAgent(BasicPolicyAgent):
             #if rev_action in legals:
             #    return rev_action
             successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legals] 
-            if len(successors) is 0: return random.choice(legals)
-            scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
+            if len(successors) is 0:
+                ret = random.choice(legals)
+                print cyan('RET10 returns %s' % ret)
+                return ret
+            scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
+                ) for nstate, action in successors]
             bestScore = min(scored)[0]
             bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
-            if rev_action in bestActions: return rev_action
-            return random.choice(bestActions)        
+            if rev_action in bestActions:
+                ret = rev_action
+                print cyan('RET11 returns %s' % ret)
+                return ret
+            ret = random.choice(bestActions)        
+            print cyan('RET12 returns %s' % ret)
+            return ret
 	
 	
 	
