@@ -3,8 +3,9 @@
 import random
 from collections import deque
 from math import ceil, floor
-from game import Agent, Actions, Directions
+from game import Agent, AgentState, Actions, Directions
 from policyAgents import PolicyAgent, Policy
+from bombermanAgents import AvoidBomberman
 
 class HungryBomberman(Agent):
     """
@@ -27,13 +28,18 @@ class HungryBomberman(Agent):
         scored = [(
                 self.hungryEvaluation(nstate, _currpos, self.index, False), action
                 ) for nstate, action in successors]
-        ###print 'scored=',scored,
+        print 'scored=',scored,
         bestScore = max(scored)[0]
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
         ret = random.choice(bestActions)
-        ###print ' choose ', ret
-        print
-        return ret
+        print ' choose ', ret
+        # if all score are the same, return None
+        differentScores = [act for sc, act in scored if sc != bestScore]
+        if len(differentScores) == 0:
+            print 'Return None'
+            return None
+        else:
+            return ret
 
     def hungryEvaluation(self, nstate, oldpos, agentIdx, hasBombLeft=False):
         """
@@ -72,8 +78,16 @@ class HungryBomberman(Agent):
         satisfaction_item_pairs = [(caculator[i](state[i]), i) for i in state]
         satisfaction_order = [item_id for _, item_id in sorted(satisfaction_item_pairs)]
 
+        dont_care_items = []
+        if state[1] == len(AgentState.SPEED_TABLE) - 1: dont_care_items.append(1)
+        if state[2] == len(AgentState.POWER_TABLE) - 1: dont_care_items.append(2)
+        if state[3] == AgentState.BOMB_NUMBER_LIMITATION: dont_care_items.append(3)
 
-        distances_to_item = { 1: [], 2: [], 3: [] }
+
+        distances_to_item = {i: [] for i in state if i not in dont_care_items}
+        print '  state=', state,
+        print '  dont_care_items=', dont_care_items,
+        print '  distances_to_item=', distances_to_item
         # Perform BFS starts from pos=(tx, ty) within 20 steps
         # to find all reachable items (if exists)
         # and fill their distances into distances_to_item dict
@@ -116,48 +130,61 @@ class HungryBomberman(Agent):
         for item_id in distances_to_item:
             w = weight[satisfaction_order.index(item_id)]
             for _dist in distances_to_item[item_id]:
-                if _dist == 0:
-                    score += 100
-                else:
-                    score += w * (20 - _dist)
+                if _dist > 20:
+                    continue
+                dist_score_table = [100, 50, 25, 17, 16, 15,
+                 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+                score += w * dist_score_table[_dist]
         ###print 'distances_to_item=', distances_to_item
 
         overall_ability = sum(state[i] for i in state) # compensation after eating item...
         ret = score + overall_ability * 1000
+        print
+        print 'score =', score
+        print 'overall_ability =', overall_ability
         ###print '(ox,oy)=(%1.1f,%1.1f) (nx,ny)=(%1.1f,%1.1f) (tx,ty)=(%d,%d)'%(ox,oy,nx,ny,tx,ty),
         ###print ' has score=%d'%ret
         return ret
 
-class HungryPutBombPolicy(Policy):
-    def isPolicyHolds(self, state): raiseNotDefined()
-    def generatePolicy(self, state): raiseNotDefined()
-    def getActionForPolicy(self, state): raiseNotDefined()
-
-class HungryPutBombPolicyAgent(PolicyAgent):
+class HungryPutBombPolicy(PolicyAgent):
 
     def __init__(self, index=0, *_, **__):
         self.index = index
-        self.put_bomb_policy = HungryPutBombPolicy()
         self.targetPutBombPosition = None
+        self.avoidBomberman = AvoidBomberman(index)
+        self.hungryBomberman = HungryBomberman()
 
     def getAction(self, state):
+        print 'HungryPutBombPolicy.getAction() is called'
+        THRESHOLD_BOMB_DANGER = 8
+
+        # If there is only one legal action, just return it.
         legal_actions = state.getLegalActions(self.index)
-        if self.isHungryPutBombConditionHolds(state):
+        if len(legal_actions) == 1:
+            return legal_actions[0]
+
+        # If the current position is dangerous, use the "AVOID" strategy
+        x, y = map(int, map(round, state.getAgentState(self.index).getPosition()))
+        if state.getBombScore(x, y) > THRESHOLD_BOMB_DANGER:
+            return self.avoidBomberman.getAction(state)
+
+        # If there are foods, use the "Hungry" strategy to eat them
+
+        # Try to use Put Bomb policy
+        if self.isPolicyHolds(state):
             if self.targetPutBombPosition == None:
                 self.targetPutBombPosition = self.hungryWhereToPutBomb(state)
-            act = self.getActionToPerformPolicy(state)
-            print '<<< legal_actions=', legal_actions
-            print '>>> act=', act
+            act = self.getActionForPolicy(state)
             if act != None:
                 return act
             # 如果 act == None 的話怎麼辦？
             # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
 
-            ###print 'The HungryPutBombPolicyAgent.getAction() returns', act
+            ###print 'The HungryPutBombPolicy.getAction() returns', act
             ###raise SystemExit
         return self.getActionByDecisionTree(state)
 
-    def getActionToPerformPolicy(self, state):
+    def getActionForPolicy(self, state):
         """
         1.
         Return an action that is the first action of shortest path to targetPos by
@@ -172,16 +199,19 @@ class HungryPutBombPolicyAgent(PolicyAgent):
         curr_pos = state.getAgentPosition(self.index)
         target_pos = map(int, self.targetPutBombPosition)
         if curr_map.isBomb(target_pos):
+            print 'There is a bomb at target_pos=', target_pos
             self.targetPutBombPosition = None
             print '~~~ TAT already has bomb... returns Actions.STOP'
             return Directions.STOP
 
+        print ">>>>> target_pos", target_pos,
+        print "curr_pos", curr_pos
         if target_pos[0] == curr_pos[0] and target_pos[1] == curr_pos[1]:
             self.targetPutBombPosition = None
             print '~~~ TAT already rreach the location... returns Actions.LAY'
             return Actions.LAY
 
-        print 'getActionToPerformPolicy wants to go to target_pos=',target_pos
+        print 'getActionForPolicy wants to go to target_pos=',target_pos
         if target_pos == None: return None
         target_x, target_y = target_pos
         queue, visited, SEARCH_DEPTH = deque(), set(), 20
@@ -191,6 +221,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
         queue.append((curr_pos, 0, None))
         visited.add(curr_pos)
 
+        print 'BEFORE BFS...'
         while len(queue) != 0:
             (x, y), this_dist, first_action = queue.popleft()
             if this_dist > SEARCH_DEPTH:
@@ -225,13 +256,14 @@ class HungryPutBombPolicyAgent(PolicyAgent):
                             state.getBombScore(x, y) <= BOMB_SCORE_SAFE_THRESHOLD):
                         queue.append((adjpos, this_dist + 1, first_action))
                         visited.add(adjpos)
+        print 'AFTER BFS...'
         return None
 
     def getActionByDecisionTree(self, state):
         # TODO
         return Directions.STOP
 
-    def isHungryPutBombConditionHolds(self, state):
+    def isPolicyHolds(self, state):
         agentState = state.getAgentState(self.index)
 
         # 算自己的炸彈是否剩餘, TODO 考慮敵人距離
@@ -251,6 +283,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
                 agentState.Bomb_Total_Number # nbomb 0 ~ 10
                 ])
         if ability > 10:
+            print 'Ability already enough'
             return False
 
         return True
@@ -324,16 +357,16 @@ def adjacentCoordinates(current_position):
     if len(x_new_vals) == 2 and len(y_new_vals) == 2:
         raise Exception('Impossible current_position=%s' % str(current_position))
     elif len(x_new_vals) == 2 and len(y_new_vals) == 1:
-        return [ (x1, int(y)),
-                          (x2, int(y)) ]
+        return [(x1, int(y)),
+                (x2, int(y))]
     elif len(x_new_vals) == 1 and len(y_new_vals) == 2:
-        return [ (int(x), y1),
-                          (int(x), y2) ]
+        return [(int(x), y1),
+                (int(x), y2)]
     elif len(x_new_vals) == 1 and len(y_new_vals) == 1:
-        return [ (int(x), int(y) - 1),
-                          (int(x), int(y) + 1),
-                          (int(x) - 1, int(y)),
-                          (int(x) + 1, int(y)) ]
+        return [(int(x), int(y) - 1),
+                (int(x), int(y) + 1),
+                (int(x) - 1, int(y)),
+                (int(x) + 1, int(y))]
 
 def check_reachable(state, curr_map, bomb_power, pos):
     print 'inside check_reachable()',
@@ -343,8 +376,7 @@ def check_reachable(state, curr_map, bomb_power, pos):
             lambda x, y: (x - 1, y),
             lambda x, y: (x + 1, y),
             lambda x, y: (x, y - 1),
-            lambda x, y: (x, y + 1)
-    ]
+            lambda x, y: (x, y + 1)]
     reachable = 0
     for fx in next_pos_functions:
         print 'herer!'
@@ -352,13 +384,17 @@ def check_reachable(state, curr_map, bomb_power, pos):
         x, y = int(x), int(y)
         counter = bomb_power
         while counter > 0:
+            print "IN"
             x, y = fx(x, y)
+            if x not in range(curr_map.width) or y not in range(curr_map.height):
+                break
             print '  ', x, y
             if curr_map.isBlocked((x, y)):
                 if curr_map.isBlock((x, y)):
                     reachable += 1
             counter -= 1
     return reachable
+
 
 """
 NOTE:
