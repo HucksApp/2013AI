@@ -52,7 +52,8 @@ class SmartPolicyAgent(BasicPolicyAgent):
                         minCost = ishungry[i]/steps[i][2]
             print 'Chase item:',steps[target],'ishungry:',ishungry
             self.policy = EatItemPolicy(steps[target][1],self.index,steps[target][0])
-            return self.policy.getActionForPolicy(state)
+            if self.policy.isPolicyHolds(state):
+                return self.policy.getActionForPolicy(state)
         elif not ( None in steps or res is None ):
         # ability is full and want to get close to the enemy
             return res[1]		
@@ -66,7 +67,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
             else:
                 self.policy = None
                 print 'Hungry mode not hold condition'
-                legal = [l for l in legals if l not in [Directions.STOP, Actions.LAY]]
+                legal = [l for l in legals if l not in [Actions.LAY]]
                 successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
                 if len(successors) is 0: return random.choice(legals)
                 scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
@@ -199,11 +200,14 @@ def BFSForClosestItems(state,index,steps,th= 10):
     frontier.sort(key=lambda x:x[1])
     node = frontier.pop(0)
     if (steps[0] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 1 : # find closest POWER UP
-        steps[0] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[0] = (node[0][0],node[0][1],node[1])
     elif (steps[1] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 2: # find closest SPEED UP
-        steps[1] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[1] = (node[0][0],node[0][1],node[1])
     elif (steps[2] is None) and state.data.map[node[0][0][0]][node[0][0][1]] == 3: # find closest NUMBER UP
-        steps[2] = (node[0][0],node[0][1],node[1])
+        if state.data.MapScore[node[0][0][0]][node[0][0][1]] < 80:
+            steps[2] = (node[0][0],node[0][1],node[1])
     elif not None in steps:
         return steps
 		

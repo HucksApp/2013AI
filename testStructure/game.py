@@ -650,7 +650,7 @@ class GameStateData:
         if not self.map.isBlocked((x,y)):
           main = [self.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
-          self.MapScore[x][y] += ( main.count(True)*0.5 + second.count(True)*0.4 )
+          self.MapScore[x][y] += ( main.count(True)*1 + second.count(True)*0.4 )
 
   def clear(self):
     self._bombLaid = []
