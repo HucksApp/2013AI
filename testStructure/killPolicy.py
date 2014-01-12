@@ -28,11 +28,12 @@ class KillPolicy(Policy):
     bestScore = min(scored)[0]
     if bestScore == None: 
      return False
-    if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 0.25:
+    if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 1:
       return True
     return False  
       
   def getActionForPolicy(self, gamestate):
+    print '\033[1;31m  Execution of Kill Policy!!!  \033[0m'
     # return LAY or the direction of tracing
     legals = gamestate.getLegalActions(self.index)
     if len(legals) == 1: return legals[0]
@@ -53,15 +54,23 @@ class KillPolicy(Policy):
     if bestScore == 0: return random.choice(bestavoidActions)
     
     originScore = gamestate.getBombScore(x,y) + gamestate.getMapScore(x,y)
+    print 'Bomb: ', gamestate.getBombScore(x,y)
+    print 'Map: ', gamestate.getMapScore(x,y)
     if Actions.LAY in legals:
-      nstate = gamestate.generateSuccessor(self.index, Actions.LAY, True)
-      layScore = self.evaluationFunction(nstate, (x, y), Actions.directionToVector(Actions.LAY))
+      print 'pass Actions.LAY in legals...'
+      nextstate = gamestate.generateSuccessor(self.index, Actions.LAY, True)
+      layScore = nextstate.getBombScore(x,y) + nextstate.getMapScore(x,y)
+      print 'Bomb: ', nextstate.getBombScore(x,y)
+      print 'Map: ', nextstate.getMapScore(x,y)
+      print 'layScore =', layScore
+      #layScore = self.evaluationFunction(nstate, (x, y), Actions.directionToVector(Actions.LAY))
     else:
       return random.choice(bestActions)
-    
+    #print '\033[1;31m  Return!!!  \033[0m'
     if layScore > originScore and not gamestate.data.map.isBomb((my_x, my_y)):
+      print '\033[1;31m  Lay !!!:  \033[0m', layScore
+      print '\033[1;31m  Ori !!!:  \033[0m', originScore
       return Actions.LAY
-      
     return random.choice(bestActions)
       
   def manhattanEval(self, pos1, pos2, vec):
