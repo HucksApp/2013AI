@@ -4,6 +4,7 @@ from game import Actions
 from game import Directions
 from policyAgents import *
 from hungryPolicy import HungryPutBombPolicy
+from killPolicy import KillPolicy
 import operator
 
 class SmartPolicyAgent(BasicPolicyAgent):

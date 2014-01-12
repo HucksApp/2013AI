@@ -14,7 +14,7 @@ class HungryPutBombPolicy(Policy):
 
     def isPolicyHolds(self, state):
         print 'self.targetPutBombPosition is None, hungry policy end'
-        if self.targetPutBombPosition is None: return
+        if self.targetPutBombPosition is None: return False
 		
         agentState = state.getAgentState(self.index)
 
@@ -56,9 +56,11 @@ class HungryPutBombPolicy(Policy):
             # -------------------
             this_dist = this_dist # smaller is better
             n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
-            if n_reachable > 0:
+            if state.data.map.isBomb(map(int,(x,y))): pass
+            elif n_reachable > 0:
                 score = n_reachable * 3 - this_dist # Configuratble score function
-                scored.append((score, (x, y)))
+                if state.data.MapScore[int(x)][int(y)] < 80 :
+                    scored.append((score, (x, y)))
 
             for adjpos in adjacentCoordinates((x, y)):
                 if (adjpos[0] in range(curr_map.width) and
