@@ -147,12 +147,14 @@ class HungryPutBombPolicyAgent(PolicyAgent):
       if self.targetPutBombPosition == None:
         self.targetPutBombPosition = self.hungryWhereToPutBomb(state)
       act = self.getActionToPerformPolicy(state)
-      if act == None: # 無法走到目標位置
-        act = Directions.STOP # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
-      print 'The HungryPutBombPolicyAgent.getAction() returns', act
-      raise SystemExit
-    else:
-      return self.getActionByDecisionTree(state)
+      if act != None:
+        return act
+      # 如果 act == None 的話怎麼辦？
+      # 就停下來，或 TODO: 產生新的 targetPutBombPosition 再算一次
+
+      ###print 'The HungryPutBombPolicyAgent.getAction() returns', act
+      ###raise SystemExit
+    return self.getActionByDecisionTree(state)
 
   def getActionToPerformPolicy(self, state):
     """
@@ -162,6 +164,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     curr_map = state.data.map
     curr_pos = state.getAgentPosition(self.index)
     target_pos = self.targetPutBombPosition
+    print 'getActionToPerformPolicy wants to go to target_pos=',target_pos
     if target_pos == None: return None
     target_x, target_y = target_pos
     queue, visited, SEARCH_DEPTH = deque(), set(), 20
@@ -241,9 +244,10 @@ class HungryPutBombPolicyAgent(PolicyAgent):
     """
     curr_map = state.data.map
     curr_pos = state.getAgentPosition(self.index)
-    bomb_power = state.getAgentState(self.index).Bomb_Power
+    bomb_power = state.getAgentState(self.index).Bomb_Power + 1
     queue, visited = deque(), set()
     SEARCH_DEPTH = 10
+    print 'BFS from curr_pos=', curr_pos
 
     first_expanded = True
     queue.append((curr_pos, 0))
@@ -258,8 +262,11 @@ class HungryPutBombPolicyAgent(PolicyAgent):
       # -------------------
       this_dist = this_dist # smaller is better
       n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
-      score = n_reachable * 3 - this_dist # Configuratble score function
-      scored.append((score, (x, y)))
+      if n_reachable > 0:
+        print (x, y), "has n_reachable > 0 !!!"
+        score = n_reachable * 3 - this_dist # Configuratble score function
+        scored.append((score, (x, y)))
+
       for adjpos in adjacentCoordinates((x, y)):
         if (adjpos[0] in range(curr_map.width) and
             adjpos[1] in range(curr_map.height) and
@@ -274,6 +281,7 @@ class HungryPutBombPolicyAgent(PolicyAgent):
       return None
     else:
       scored = sorted(scored, reverse=True)
+      print scored
       _score, (x, y) = scored[0]
       return (x, y)
 
@@ -298,12 +306,21 @@ def adjacentCoordinates(current_position):
   y_new_vals = set([y1, y2])
   if len(x_new_vals) == 2 and len(y_new_vals) == 2:
     raise Exception('Impossible current_position=%s' % str(current_position))
+  elif len(x_new_vals) == 2 and len(y_new_vals) == 1:
+    return [ (x1, int(y)),
+             (x2, int(y)) ]
+  elif len(x_new_vals) == 1 and len(y_new_vals) == 2:
+    return [ (int(x), y1),
+             (int(x), y2) ]
   elif len(x_new_vals) == 1 and len(y_new_vals) == 1:
-    x_new_vals = [int(x) - 1, int(x) + 1]
-    y_new_vals = [int(y) - 1, int(y) + 1]
-  return [(x, y) for x in x_new_vals for y in y_new_vals]
+    return [ (int(x), int(y) - 1),
+             (int(x), int(y) + 1),
+             (int(x) - 1, int(y)),
+             (int(x) + 1, int(y)) ]
 
 def check_reachable(state, curr_map, bomb_power, pos):
+  print 'inside check_reachable()',
+  print 'pos=', pos, 'bomb_power', bomb_power
   curr_map = state.data.map
   next_pos_functions = [
       lambda x, y: (x - 1, y),
@@ -313,12 +330,15 @@ def check_reachable(state, curr_map, bomb_power, pos):
   ]
   reachable = 0
   for fx in next_pos_functions:
+    print 'herer!'
     x, y = pos
+    x, y = int(x), int(y)
     counter = bomb_power
     while counter > 0:
       x, y = fx(x, y)
-      if currmap.isBlocked((x, y)):
-        if currmap.isBlock((x, y)):
+      print '  ', x, y
+      if curr_map.isBlocked((x, y)):
+        if curr_map.isBlock((x, y)):
           reachable += 1
       counter -= 1
   return reachable
