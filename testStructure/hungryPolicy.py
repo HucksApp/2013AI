@@ -58,8 +58,9 @@ class HungryPutBombPolicy(Policy):
             this_dist = this_dist # smaller is better
             n_reachable = check_reachable(state, curr_map, bomb_power, (x, y)) # larger is better
             if state.data.map.isBomb(map(int,(x,y))): pass
+            elif state.getBombScore(map(int, (x,y))) > 0: pass
             elif n_reachable > 0:
-                score = n_reachable * 3 - this_dist # Configuratble score function
+                score = n_reachable * 5 - this_dist # Configuratble score function
                 if state.data.MapScore[int(x)][int(y)] < 80 :
                     scored.append((score, (x, y)))
                 else:
@@ -81,7 +82,8 @@ class HungryPutBombPolicy(Policy):
             scored = sorted(scored, reverse=True)
             _score, (x, y) = scored[0]
             self.targetPutBombPosition = (x, y)
-        print 'generate Policy:',self.targetPutBombPosition
+        print '!!! scored= ', scored
+        print '!!! generate Policy:',self.targetPutBombPosition
 
     def getActionForPolicy(self, state):
         """
