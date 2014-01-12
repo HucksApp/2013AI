@@ -33,7 +33,7 @@ class KillPolicy(Policy):
     if mystate.getLeftBombNumber() > 0 and mystate.getSpeed() >= 0.25:
       self.bestActions = [pair[1] for pair in scored if pair[0] == self.bestScore]
       successors = [(gamestate.generateSuccessor(self.index,  action , True), action) for action in legals]
-      avoidscored = [(self.evaluationFunction(nstate,(enemy_x, enemy_y),Actions.directionToVector(action)), action) for nstate, action in successors]
+      avoidscored = [(self.evaluationFunction(nstate,nearestPoint(mypos),Actions.directionToVector(action)), action) for nstate, action in successors]
       bestavoidScore = min(avoidscored)[0]
       print 'BestAvoidScore: ', bestavoidScore
       if bestavoidScore > 15:
@@ -51,7 +51,14 @@ class KillPolicy(Policy):
     (my_x, my_y) = nearestPoint(gamestate.getAgentPosition(self.index))
     
     #if bestScore == None: return random.choice(self.bestActions)
-    if self.bestScore[0] == 0 and Actions.LAY not in legals: return random.choice(self.bestavoidActions)
+    if self.bestScore[0] == 0 and Actions.LAY not in legals:
+      ok_legals = []
+      for action in legals:
+        vec = Actions.directionToVector(action)
+        if not gamestate.getMapscore(int(my_x+vec[0]),int(my_y+vec[1])) >= 80:
+          ok_legals.append(action)
+      if len(ok_legals) == 0: return random.choice(legals)
+      return random.choice(ok_legals)
     
     originScore = gamestate.getBombScore(x,y) + gamestate.getMapScore(x,y)
     if Actions.LAY in legals:

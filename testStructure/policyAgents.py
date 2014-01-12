@@ -198,7 +198,7 @@ class BasicPolicyAgent(PolicyAgent):
     if len(legals) == 1 : return legals[0]
 
     if not self.policy is None:
-        print 'Agent Mode!!!!!!!!!!!!!!!!:  ', self.policy.__class__
+        print util.blue('>>>>>>> Agent #%d Agent Mode!!!!!!!!!!!!!!!!:  %s <<<<<<<' % (self.index, self.policy.__class__))
         if self.policy.isPolicyHolds(state):
             return self.policy.getActionForPolicy(state)
         else:

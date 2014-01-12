@@ -33,6 +33,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
         bestScore = min(scored)[0]
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
         ret = random.choice(bestActions)		
+        print 'Scored: ', scored
         print cyan('RET2 randomly returns %s' % ret)
         return ret
 
@@ -60,13 +61,22 @@ class SmartPolicyAgent(BasicPolicyAgent):
             print 'Chase item:',steps[target],'ishungry:',ishungry
             self.policy = EatItemPolicy(steps[target][1],self.index,steps[target][0])
             ret = self.policy.getActionForPolicy(state)
-            print cyan('RET3 By EatItemPolicy, returns %s' % ret)
-            return ret
-        elif not ( None in steps or res is None ):
+            if scoreEvaluation(state, pos, Actions.directionToVector(ret), 0) > self.DANGER_BOMB_SCORE_THRESHOLD:
+                print cyan('RET3 returns STOP')
+                return Directions.STOP
+            else:
+                print cyan('RET3 returns %s' % ret)
+                return ret
+        #elif not ( None in steps or res is None ):
         # ability is full and want to get close to the enemy
+        elif (None not in steps) and (res is not None):
             ret = res[1]
-            print cyan('RET4 returns %s' % ret)
-            return ret
+            if scoreEvaluation(state, pos, Actions.directionToVector(ret), 0) > self.DANGER_BOMB_SCORE_THRESHOLD:
+                print cyan('RET4 returns STOP')
+                return Directions.STOP
+            else:
+                print cyan('RET4 returns %s' % ret)
+                return ret
         else:
         # there is no path to any items and ability is low or no reachable enemies, need to find a box to lay a bomb (policy)
             print 'should apply Find box policy'
@@ -87,6 +97,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
                     return ret
                 scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
                     ) for nstate, action in successors]
+                print 'Scored: ', scored
                 bestScore = min(scored)[0]
                 bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
                 ret = random.choice(bestActions)
@@ -104,6 +115,8 @@ class SmartPolicyAgent(BasicPolicyAgent):
             self.policy = KillPolicy(self.index,target)
             if self.policy.isPolicyHolds(state):
               ret = self.policy.getActionForPolicy(state)
+              print cyan('RET9 returns %s' % ret)
+              return ret 
             else:
               print 'just avoid the danger or run away!!'
               # run away or avoid!!!!
@@ -116,6 +129,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
                   print cyan('RET13 returns %s' % ret)
                   return ret
               scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action)), action) for nstate, action in successors]
+              print 'Scored: ', scored
               bestScore = min(scored)[0]
               bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
               if rev_action in bestActions:
@@ -125,8 +139,6 @@ class SmartPolicyAgent(BasicPolicyAgent):
               ret = random.choice(bestActions)        
               print cyan('RET15 returns %s' % ret)
               return ret
-            print cyan('RET9 returns %s' % ret)
-            return ret
         else:
             print 'just avoid the danger or run away!!'
             # run away or avoid!!!!
@@ -140,6 +152,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
                 return ret
             scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
                 ) for nstate, action in successors]
+            print 'Scored: ', scored
             bestScore = min(scored)[0]
             bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
             if rev_action in bestActions:

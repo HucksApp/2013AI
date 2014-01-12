@@ -283,9 +283,9 @@ class GameState:
           if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
     for x in range(self.data.map.width):
       for y in range(self.data.map.height):
-        if self.data.MapScore[x][y] > 3.5 and self.data.MapScore[x][y] < 80:
+        if self.data.MapScore[x][y] > 3.7 and self.data.MapScore[x][y] < 80:
           for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]: 
-            if self.data.MapScore[row][col] > 3.5:
+            if self.data.MapScore[row][col] > 3.7:
               self.data.MapScore[x][y] = 100
               self.data.MapScore[row][col] = 100
             
