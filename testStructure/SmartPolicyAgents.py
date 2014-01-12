@@ -33,7 +33,7 @@ class SmartPolicyAgent(BasicPolicyAgent):
     threshold = self.THRESHOLD_TABLE[state.getAgentState(self.index).speed]
     res = BFSForClosestEnemy(state,self.index,threshold)
 
-    if res is None:
+    if res is None or res[2] > threshold:
     # no visable enemies  	
         print 'Safe mode'
         ability = [state.getAgentState(self.index).getBombPower(),state.getAgentState(self.index).getSpeed(),state.getAgentState(self.index).Bomb_Total_Number]
@@ -53,15 +53,32 @@ class SmartPolicyAgent(BasicPolicyAgent):
             print 'Chase item:',steps[target],'ishungry:',ishungry
             self.policy = EatItemPolicy(steps[target][1],self.index,steps[target][0])
             return self.policy.getActionForPolicy(state)
-        else:
-        # there is no path to any items , need to find a box to lay a bomb (policy)
+        elif not ( None in steps or res is None ):
+        # ability is full and want to get close to the enemy
+            return res[1]		
+        elif None in steps:
+        # there is no path to any items and ability is low or no reachable enemies, need to find a box to lay a bomb (policy)
             print 'should apply Find box policy'
             self.policy = HungryPutBombPolicy(self.index)
             self.policy.generatePolicy(state)
             if self.policy.isPolicyHolds(state):
                 return self.policy.getActionForPolicy(state)
             else:
-                return random.choice(legals)
+                self.policy = None
+                print 'Hungry mode not hold condition'
+                legal = [l for l in legals if l not in [Directions.STOP, Actions.LAY]]
+                successors = [(state.generateSuccessor(self.index,  action , True), action) for action in legal] 
+                if len(successors) is 0: return random.choice(legals)
+                scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),0), action) for nstate, action in successors]
+                bestScore = min(scored)[0]
+                bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
+                return random.choice(bestActions)
+                
+        else:
+        # no enemy reachable , ability is full
+            print 'strange situation !!!'
+            return random.choice(legals)
+            
 
     else:
     # in first danger mode 
@@ -150,7 +167,7 @@ def BFSForClosestEnemy(state,index,th= 10):
         x,y = int(x+vec[0]),int(y+vec[1])
         if not state.data.map.isBlocked((x,y)) and (x,y) not in _vertex:
             scoreChange = 1 #+ (state.data.MapScore[x][y]+state.data.BombScore[x][y])/20
-            if node[1] + scoreChange > th : continue
+            #if node[1] + scoreChange > th : continue
             if (x,y) not in [n[0] for n in frontier]:
                 for t,i in targets:
                     if (x,y) == t:
