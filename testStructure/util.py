@@ -493,3 +493,22 @@ class TimeoutFunction:
             signal.signal(signal.SIGALRM, old)
         signal.alarm(0)
         return result
+
+def red(s):
+    return "\033[1;31m%s\033[0m" % s
+
+def green(s):
+    return "\033[1;32m%s\033[0m" % s
+
+def yellow(s):
+    return "\033[1;33m%s\033[0m" % s
+
+def blue(s):
+    return "\033[1;34m%s\033[0m" % s
+
+def purple(s):
+    return "\033[1;35m%s\033[0m" % s
+
+def cyan(s):
+    return "\033[1;36m%s\033[0m" % s
+
