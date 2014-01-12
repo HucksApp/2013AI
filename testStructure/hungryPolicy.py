@@ -19,6 +19,9 @@ class HungryPutBombPolicy(Policy):
 		
         agentState = state.getAgentState(self.index)
 
+        if state.getBombScore(*map(int, agentState.getPosition())) > 30:
+            return False
+
         if agentState.Bomb_Left_Number == 0:
             return False
 
@@ -60,6 +63,8 @@ class HungryPutBombPolicy(Policy):
                 score = n_reachable * 3 - this_dist # Configuratble score function
                 if state.data.MapScore[int(x)][int(y)] < 80 :
                     scored.append((score, (x, y)))
+                else:
+                    print 'AVOID!!!'
 
             for adjpos in adjacentCoordinates((x, y)):
                 if (adjpos[0] in range(curr_map.width) and
@@ -113,12 +118,14 @@ class HungryPutBombPolicy(Policy):
         queue.append((curr_pos, 0, None))
         visited.add(curr_pos)
 
+        ret_action = None
         while len(queue) != 0:
             (x, y), this_dist, first_action = queue.popleft()
             if this_dist >= SEARCH_DEPTH:
                 break
             if x == target_x and y == target_y:
-                return first_action
+                ret_action = first_action
+                break
 
             adj_positions = adjacentCoordinates((x, y))
             adj_actions = []
@@ -143,11 +150,25 @@ class HungryPutBombPolicy(Policy):
                     if (adjpos[0] in range(curr_map.width) and
                             adjpos[1] in range(curr_map.height) and
                             not curr_map.isBlocked(adjpos) and
-                            adjpos not in visited and
-                            state.getBombScore(x, y) <= BOMB_SCORE_SAFE_THRESHOLD):
+                            adjpos not in visited):
                         queue.append((adjpos, this_dist + 1, first_action))
                         visited.add(adjpos)
-        return None
+        def get_next_pos(curr_pos, ret_action):
+            x, y = map(int, curr_pos)
+            if ret_action == Directions.WEST:
+                return (x-1, y)
+            elif ret_action == Directions.EAST:
+                return (x+1, y)
+            elif ret_action == Directions.NORTH:
+                return (x, y+1)
+            elif ret_action == Directions.SOUTH:
+                return (x, y-1)
+        next_pos = get_next_pos(curr_pos, ret_action)
+        if state.getBombScore(*next_pos) > 30:
+            print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> STOP'
+            return Directions.STOP
+        else:
+            return ret_action
 
 
 def adjacentCoordinates(current_position):
