@@ -31,6 +31,11 @@ class SmartPolicyAgent(BasicPolicyAgent):
         scored = [(scoreEvaluation(nstate,pos,Actions.directionToVector(action),1) + 100*(state.data._eaten[self.index] - nstate.data._eaten[self.index]), action
             ) for nstate, action in successors]
         bestScore = min(scored)[0]
+        if bestScore > self.DANGER_BOMB_SCORE_THRESHOLD :
+            print 'Execute Emergency Avoid Policy'
+            self.policy = AvoidPolicy(self.index, legals, scored)
+            return self.policy.getActionForPolicy(state)
+			
         bestActions = [pair[1] for pair in scored if pair[0] == bestScore]
         ret = random.choice(bestActions)		
         print cyan('RET2 randomly returns %s' % ret)

@@ -567,7 +567,7 @@ class GameStateData:
       except TypeError, e:
         print e
         #hash(state)
-    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.BombScore) + 113*hash(self.bombs) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
+    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.BombScore) + 113*hash(tuple(self.bombs)) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
 
   def __str__( self ):
     width, height = self.map.width, self.map.height
@@ -634,7 +634,9 @@ class GameStateData:
     self.FramesUntilEnd  = timeout
     self.bombs = []
     for bomb in layout.bomb:
-       self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+       #self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+	   self.bombs.append((timeout-random.choice([7,8,9,10]), nearestPoint(bomb), random.choice([2,3,4,5,6]) , -1))
+    print self.bombs
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:
@@ -647,10 +649,12 @@ class GameStateData:
   def initializeMapScore(self):
     for x in range(self.map.width):
       for y in range(self.map.height):
-        if not self.map.isBlocked((x,y)):
+        if not self.map.isBlocked((x,y)) or self.map.isBomb((x,y)):
           main = [self.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
           self.MapScore[x][y] += ( main.count(True)*1 + second.count(True)*0.4 )
+          if main.count(True) == 4 : self.MapScore[x][y] = 100
+          if self.map.isBomb((x,y)) : self.MapScore[x][y] += 1
 
   def clear(self):
     self._bombLaid = []
