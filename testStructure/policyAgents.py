@@ -199,8 +199,11 @@ class BasicPolicyAgent(PolicyAgent):
 
     if not self.policy is None:
         print util.blue('>>>>>>> Agent #%d Agent Mode!!!!!!!!!!!!!!!!:  %s <<<<<<<' % (self.index, self.policy.__class__))
+        print 'Pos!!!!!!!!: ', state.getAgentPosition(self.index)
         if self.policy.isPolicyHolds(state):
-            return self.policy.getActionForPolicy(state)
+            ret = self.policy.getActionForPolicy(state)
+            print "Returned action!!!!!!!: ", ret
+            return ret 
         else:
             print 'policy unhold'
             self.policy = None

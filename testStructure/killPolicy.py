@@ -55,7 +55,7 @@ class KillPolicy(Policy):
       ok_legals = []
       for action in legals:
         vec = Actions.directionToVector(action)
-        if not gamestate.getMapscore(int(my_x+vec[0]),int(my_y+vec[1])) >= 80:
+        if not gamestate.getMapScore(int(my_x+vec[0]),int(my_y+vec[1])) >= 80:
           ok_legals.append(action)
       if len(ok_legals) == 0: return random.choice(legals)
       return random.choice(ok_legals)
