@@ -567,7 +567,7 @@ class GameStateData:
       except TypeError, e:
         print e
         #hash(state)
-    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.BombScore) + 113*hash(self.bombs) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
+    return int((hash(tuple(self.agentStates)) + 13*hash(self.map) + 113*hash(self.BombScore) + 113*hash(tuple(self.bombs)) + 7 * hash(self.score)) % 1048575 )  #+ 13*hash(self.food) + 113* hash(tuple(self.capsules))
 
   def __str__( self ):
     width, height = self.map.width, self.map.height
@@ -634,7 +634,9 @@ class GameStateData:
     self.FramesUntilEnd  = timeout
     self.bombs = []
     for bomb in layout.bomb:
-       self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+       #self.bombs.append((timeout-random.choice([3,4,5,6,9,12]), nearestPoint(bomb), random.choice([1,2,3,6]) , -1))
+	   self.bombs.append((timeout-random.choice([7,8,9,10]), nearestPoint(bomb), random.choice([2,3,4,5,6]) , -1))
+    print self.bombs
     self.agentStates = []
     num = 0
     for index, pos in layout.agentPositions:

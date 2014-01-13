@@ -115,7 +115,7 @@ class GameState:
 
     #state.data._eaten = [False for i in range(state.getNumAgents())]
     if state.data._eaten[agentIndex] > 0:
-      BombermanRules.applyAction( state, action, agentIndex )
+      BombermanRules.applyAction( state, action, agentIndex)
 
     if force or ( agentIndex == state.getNumAgents() - 1):
       state.minusOneFrame()
@@ -450,7 +450,7 @@ class BombermanRules:
     return legal
   getLegalActions = staticmethod( getLegalActions )
 
-  def applyAction( state, action, index ):
+  def applyAction( state, action, index , force = False):
     """
     Edits the state to reflect the results of the action.
     """
@@ -464,7 +464,10 @@ class BombermanRules:
     agentState = state.data.agentStates[index]
 
     # Update Configuration
-    vector = Actions.directionToVector( action, agentState.getSpeed() )
+    if force:
+      vector = Actions.directionToVector( action)
+    else:
+      vector = Actions.directionToVector( action, agentState.getSpeed() )
     agentState.configuration = agentState.configuration.generateSuccessor( vector )
     # Eat
     next = agentState.configuration.getPosition()
