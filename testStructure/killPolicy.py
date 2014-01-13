@@ -34,6 +34,7 @@ class KillPolicy(Policy):
       self.bestActions = [pair[1] for pair in scored if pair[0] == self.bestScore]
       successors = [(gamestate.generateSuccessor(self.index,  action , True), action) for action in legals]
       avoidscored = [(self.evaluationFunction(nstate,nearestPoint(mypos),Actions.directionToVector(action)), action) for nstate, action in successors]
+      print 'KillPolicy.isPolicyHolds:  avoidscored=', avoidscored
       bestavoidScore = min(avoidscored)[0]
       print 'BestAvoidScore: ', bestavoidScore
       if bestavoidScore > 15:
@@ -67,13 +68,35 @@ class KillPolicy(Policy):
       #layScore = self.evaluationFunction(nstate, (x, y), Actions.directionToVector(Actions.LAY))
     else:
       print 'Lay not in legal!!'
-      return random.choice(self.bestavoidActions)
+      ok_legals = []
+      for action in self.bestActions:
+        vec = Actions.directionToVector(action)
+        if not gamestate.getBombScore(int(my_x+vec[0]),int(my_y+vec[1])) >= 30:
+          ok_legals.append(action)
+      if len(ok_legals) == 0:
+        print 'len(ok_legals) == 0'
+        return random.choice(legals)
+      else:
+        print 'len(ok_legals) > 0'
+        return random.choice(ok_legals)
 
-    if layScore > originScore and not gamestate.data.map.isBomb((my_x, my_y)):
+    #if layScore > originScore and not gamestate.data.map.isBomb((my_x, my_y)):
+    if abs(my_x - x) <= 2 and abs(my_y - y) <= 2 and not gamestate.data.map.isBomb((my_x, my_y)):
       print 'Lay in legal!!'
       return Actions.LAY
+
     print 'Approach'
-    return random.choice(self.bestActions)
+    ok_legals = []
+    for action in self.bestActions:
+      vec = Actions.directionToVector(action)
+      if not gamestate.getBombScore(int(my_x+vec[0]),int(my_y+vec[1])) >= 30:
+        ok_legals.append(action)
+    if len(ok_legals) == 0:
+      print 'len(ok_legals) == 0'
+      return random.choice(legals)
+    else:
+      print 'len(ok_legals) > 0'
+      return random.choice(ok_legals)
       
   def manhattanEval(self, pos1, pos2, vec):
     mypos = pos1[0]+vec[0], pos1[1]+vec[1]

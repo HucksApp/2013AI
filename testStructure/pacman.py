@@ -176,7 +176,7 @@ class GameState:
 
   def minusOneFrame( self ):
     self.data.FramesUntilEnd = self.data.FramesUntilEnd - 1
-    print util.yellow('~~~~~~~~~~~~   currently, FramesUntilEnd = %d' % self.data.FramesUntilEnd)
+    #print util.yellow('~~~~~~~~~~~~   currently, FramesUntilEnd = %d' % self.data.FramesUntilEnd)
     return self.data.FramesUntilEnd
 
   def layABomb(self,agentIndex,pos):
@@ -279,15 +279,15 @@ class GameState:
           main = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]]
           second = [self.data.map.isBlocked((row,col)) for row,col in [(x+1,y+1),(x-1,y+1),(x+1,y-1),(x-1,y-1)]]
           self.data.MapScore[x][y] = ( main.count(True)*1 + second.count(True)*0.4 )
-          if main.count(True) == 4: self.data.MapScore[x][y] = 100
+          if main.count(True) == 4: self.data.MapScore[x][y] = 1000
           if self.data.map.isBomb((x,y)): self.data.MapScore[x][y] += 1
     for x in range(self.data.map.width):
       for y in range(self.data.map.height):
-        if self.data.MapScore[x][y] > 3.7 and self.data.MapScore[x][y] < 80:
+        if not self.data.map.isBlocked((x,y)) and self.data.MapScore[x][y] > 3.7 and self.data.MapScore[x][y] < 80 :
           for row,col in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]: 
-            if self.data.MapScore[row][col] > 3.7:
-              self.data.MapScore[x][y] = 100
-              self.data.MapScore[row][col] = 100
+            if self.data.MapScore[row][col] > 3.7 and not self.data.map.isBlocked((row,col)):
+              self.data.MapScore[x][y] = 1000
+              self.data.MapScore[row][col] = 1000
             
 		  
   def calBombScore(self, counter):

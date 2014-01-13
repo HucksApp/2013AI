@@ -47,6 +47,8 @@ class AvoidPolicy(Policy):
 	
   def BFSforSafeState(self,state,index, layer = 8):
   
+    speed = state.getAgentState(index).getSpeed()
+    layer = 2.0 / speed
     start = state  
     queue, visited = deque(), set()
     queue.append([(start,None),0])
@@ -56,7 +58,7 @@ class AvoidPolicy(Policy):
       node = queue.popleft()
 
       if node[1] > layer : continue
-      elif node[1] == layer :
+      elif node[1] == round(layer) :
         res.append((scoreEvaluation(node[0][0],node[0][0].getAgentPosition(index),(0,0),0.4),node[0][1]))
       legals = node[0][0].getLegalActions(index)
       for action in [l for l in legals if l is not Actions.LAY]:
